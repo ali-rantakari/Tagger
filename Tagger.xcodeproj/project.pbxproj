@@ -1,0 +1,406 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 44;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
+		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
+		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
+		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		C90301150DF9FAE9009B1A5E /* TaggerController.m in Sources */ = {isa = PBXBuildFile; fileRef = C90301140DF9FAE9009B1A5E /* TaggerController.m */; };
+		C91647910FDDA45200B6FA19 /* OpenMeta.m in Sources */ = {isa = PBXBuildFile; fileRef = C916478A0FDDA45200B6FA19 /* OpenMeta.m */; };
+		C91647920FDDA45200B6FA19 /* OpenMetaAuthenticate.m in Sources */ = {isa = PBXBuildFile; fileRef = C916478C0FDDA45200B6FA19 /* OpenMetaAuthenticate.m */; };
+		C91647930FDDA45200B6FA19 /* OpenMetaBackup.m in Sources */ = {isa = PBXBuildFile; fileRef = C916478E0FDDA45200B6FA19 /* OpenMetaBackup.m */; };
+		C91647940FDDA45200B6FA19 /* OpenMetaPrefs.m in Sources */ = {isa = PBXBuildFile; fileRef = C91647900FDDA45200B6FA19 /* OpenMetaPrefs.m */; };
+		C91647C50FDDA8ED00B6FA19 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C91647C40FDDA8ED00B6FA19 /* Security.framework */; };
+		C93B84770E047C3D0062C273 /* NSImage+QuickLook.m in Sources */ = {isa = PBXBuildFile; fileRef = C93B84750E047C3D0062C273 /* NSImage+QuickLook.m */; };
+		C93B84870E047C730062C273 /* QuickLook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C93B84860E047C730062C273 /* QuickLook.framework */; };
+		C93CBC45107783300020539B /* PFMoveApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = C93CBC43107783300020539B /* PFMoveApplication.m */; };
+		C94C9A220ED0E0C900A556A4 /* manyFiles.png in Resources */ = {isa = PBXBuildFile; fileRef = C94C9A210ED0E0C900A556A4 /* manyFiles.png */; };
+		C9781D031076390E00A79940 /* NSArray+NSTableViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */; };
+		C9873AB80DFC00680083AFCC /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9873AB70DFC00680083AFCC /* Carbon.framework */; };
+		C9CAF0D110080E2400328AFF /* TaggerOMImporterInstallController.m in Sources */ = {isa = PBXBuildFile; fileRef = C9CAF0D010080E2400328AFF /* TaggerOMImporterInstallController.m */; };
+		C9CAF186100819A300328AFF /* OpenMetaSpotlight.mdimporter in Resources */ = {isa = PBXBuildFile; fileRef = C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */; };
+		C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */ = {isa = PBXBuildFile; fileRef = C9D85E930E012D3900A20C1D /* Tagger.icns */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C91F14D90DF48DC800D7C9AE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		089C165DFE840E0CC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
+		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
+		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
+		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
+		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		32CA4F630368D1EE00C91783 /* Tagger_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tagger_Prefix.pch; sourceTree = "<group>"; };
+		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		8D1107320486CEB800E47090 /* Tagger.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tagger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C90301130DF9FAE9009B1A5E /* TaggerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerController.h; sourceTree = "<group>"; };
+		C90301140DF9FAE9009B1A5E /* TaggerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TaggerController.m; sourceTree = "<group>"; };
+		C91647890FDDA45200B6FA19 /* OpenMeta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenMeta.h; sourceTree = "<group>"; };
+		C916478A0FDDA45200B6FA19 /* OpenMeta.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenMeta.m; sourceTree = "<group>"; };
+		C916478B0FDDA45200B6FA19 /* OpenMetaAuthenticate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenMetaAuthenticate.h; sourceTree = "<group>"; };
+		C916478C0FDDA45200B6FA19 /* OpenMetaAuthenticate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenMetaAuthenticate.m; sourceTree = "<group>"; };
+		C916478D0FDDA45200B6FA19 /* OpenMetaBackup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenMetaBackup.h; sourceTree = "<group>"; };
+		C916478E0FDDA45200B6FA19 /* OpenMetaBackup.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenMetaBackup.m; sourceTree = "<group>"; };
+		C916478F0FDDA45200B6FA19 /* OpenMetaPrefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenMetaPrefs.h; sourceTree = "<group>"; };
+		C91647900FDDA45200B6FA19 /* OpenMetaPrefs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenMetaPrefs.m; sourceTree = "<group>"; };
+		C91647C40FDDA8ED00B6FA19 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = /System/Library/Frameworks/Security.framework; sourceTree = "<absolute>"; };
+		C93B84750E047C3D0062C273 /* NSImage+QuickLook.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSImage+QuickLook.m"; sourceTree = "<group>"; };
+		C93B84760E047C3D0062C273 /* NSImage+QuickLook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSImage+QuickLook.h"; sourceTree = "<group>"; };
+		C93B84860E047C730062C273 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = /System/Library/Frameworks/QuickLook.framework; sourceTree = "<absolute>"; };
+		C93CBC42107783300020539B /* PFMoveApplication.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PFMoveApplication.h; sourceTree = "<group>"; };
+		C93CBC43107783300020539B /* PFMoveApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PFMoveApplication.m; sourceTree = "<group>"; };
+		C94C9A210ED0E0C900A556A4 /* manyFiles.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = manyFiles.png; sourceTree = "<group>"; };
+		C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSArray+NSTableViewDataSource.h"; sourceTree = "<group>"; };
+		C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSArray+NSTableViewDataSource.m"; sourceTree = "<group>"; };
+		C9873AB70DFC00680083AFCC /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
+		C9CAF0CF10080E2400328AFF /* TaggerOMImporterInstallController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerOMImporterInstallController.h; sourceTree = "<group>"; };
+		C9CAF0D010080E2400328AFF /* TaggerOMImporterInstallController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TaggerOMImporterInstallController.m; sourceTree = "<group>"; };
+		C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */ = {isa = PBXFileReference; lastKnownFileType = folder; path = OpenMetaSpotlight.mdimporter; sourceTree = "<group>"; };
+		C9CAF1D8100821DA00328AFF /* TaggerDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerDefines.h; sourceTree = "<group>"; };
+		C9D85E930E012D3900A20C1D /* Tagger.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Tagger.icns; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8D11072E0486CEB800E47090 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
+				C9873AB80DFC00680083AFCC /* Carbon.framework in Frameworks */,
+				C93B84870E047C730062C273 /* QuickLook.framework in Frameworks */,
+				C91647C50FDDA8ED00B6FA19 /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		080E96DDFE201D6D7F000001 /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				C93CBC47107783390020539B /* LetsMove (PFMoveApplication) */,
+				C91647950FDDA45900B6FA19 /* OpenMeta */,
+				C9CAF099100809DC00328AFF /* NSImage+QuickLook */,
+				C9CAF1D8100821DA00328AFF /* TaggerDefines.h */,
+				C90301130DF9FAE9009B1A5E /* TaggerController.h */,
+				C90301140DF9FAE9009B1A5E /* TaggerController.m */,
+				C9CAF0CF10080E2400328AFF /* TaggerOMImporterInstallController.h */,
+				C9CAF0D010080E2400328AFF /* TaggerOMImporterInstallController.m */,
+				C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */,
+				C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */,
+			);
+			name = Classes;
+			sourceTree = "<group>";
+		};
+		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C91647C40FDDA8ED00B6FA19 /* Security.framework */,
+				C93B84860E047C730062C273 /* QuickLook.framework */,
+				C9873AB70DFC00680083AFCC /* Carbon.framework */,
+				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
+			);
+			name = "Linked Frameworks";
+			sourceTree = "<group>";
+		};
+		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
+				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
+				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		19C28FACFE9D520D11CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8D1107320486CEB800E47090 /* Tagger.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		29B97314FDCFA39411CA2CEA /* Tagger */ = {
+			isa = PBXGroup;
+			children = (
+				080E96DDFE201D6D7F000001 /* Classes */,
+				29B97315FDCFA39411CA2CEA /* Other Sources */,
+				29B97317FDCFA39411CA2CEA /* Resources */,
+				29B97323FDCFA39411CA2CEA /* Frameworks */,
+				19C28FACFE9D520D11CA2CBB /* Products */,
+			);
+			name = Tagger;
+			sourceTree = "<group>";
+		};
+		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
+			isa = PBXGroup;
+			children = (
+				32CA4F630368D1EE00C91783 /* Tagger_Prefix.pch */,
+				29B97316FDCFA39411CA2CEA /* main.m */,
+			);
+			name = "Other Sources";
+			sourceTree = "<group>";
+		};
+		29B97317FDCFA39411CA2CEA /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */,
+				C94C9A210ED0E0C900A556A4 /* manyFiles.png */,
+				C9D85E930E012D3900A20C1D /* Tagger.icns */,
+				8D1107310486CEB800E47090 /* Info.plist */,
+				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
+				29B97318FDCFA39411CA2CEA /* MainMenu.nib */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */,
+				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C91647950FDDA45900B6FA19 /* OpenMeta */ = {
+			isa = PBXGroup;
+			children = (
+				C91647890FDDA45200B6FA19 /* OpenMeta.h */,
+				C916478A0FDDA45200B6FA19 /* OpenMeta.m */,
+				C916478B0FDDA45200B6FA19 /* OpenMetaAuthenticate.h */,
+				C916478C0FDDA45200B6FA19 /* OpenMetaAuthenticate.m */,
+				C916478D0FDDA45200B6FA19 /* OpenMetaBackup.h */,
+				C916478E0FDDA45200B6FA19 /* OpenMetaBackup.m */,
+				C916478F0FDDA45200B6FA19 /* OpenMetaPrefs.h */,
+				C91647900FDDA45200B6FA19 /* OpenMetaPrefs.m */,
+			);
+			name = OpenMeta;
+			sourceTree = "<group>";
+		};
+		C93CBC47107783390020539B /* LetsMove (PFMoveApplication) */ = {
+			isa = PBXGroup;
+			children = (
+				C93CBC42107783300020539B /* PFMoveApplication.h */,
+				C93CBC43107783300020539B /* PFMoveApplication.m */,
+			);
+			name = "LetsMove (PFMoveApplication)";
+			sourceTree = "<group>";
+		};
+		C9CAF099100809DC00328AFF /* NSImage+QuickLook */ = {
+			isa = PBXGroup;
+			children = (
+				C93B84760E047C3D0062C273 /* NSImage+QuickLook.h */,
+				C93B84750E047C3D0062C273 /* NSImage+QuickLook.m */,
+			);
+			name = "NSImage+QuickLook";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8D1107260486CEB800E47090 /* Tagger */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "Tagger" */;
+			buildPhases = (
+				8D1107290486CEB800E47090 /* Resources */,
+				C91F14D90DF48DC800D7C9AE /* CopyFiles */,
+				8D11072C0486CEB800E47090 /* Sources */,
+				8D11072E0486CEB800E47090 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			comments = "Includes \"NSImage+QuickLook\" code by Matt Gemmell";
+			dependencies = (
+			);
+			name = Tagger;
+			productInstallPath = "$(HOME)/Applications";
+			productName = Tagger;
+			productReference = 8D1107320486CEB800E47090 /* Tagger.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		29B97313FDCFA39411CA2CEA /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Tagger" */;
+			compatibilityVersion = "Xcode 3.0";
+			hasScannedForEncodings = 1;
+			mainGroup = 29B97314FDCFA39411CA2CEA /* Tagger */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8D1107260486CEB800E47090 /* Tagger */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8D1107290486CEB800E47090 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */,
+				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
+				C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */,
+				C94C9A220ED0E0C900A556A4 /* manyFiles.png in Resources */,
+				C9CAF186100819A300328AFF /* OpenMetaSpotlight.mdimporter in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8D11072C0486CEB800E47090 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8D11072D0486CEB800E47090 /* main.m in Sources */,
+				C90301150DF9FAE9009B1A5E /* TaggerController.m in Sources */,
+				C93B84770E047C3D0062C273 /* NSImage+QuickLook.m in Sources */,
+				C91647910FDDA45200B6FA19 /* OpenMeta.m in Sources */,
+				C91647920FDDA45200B6FA19 /* OpenMetaAuthenticate.m in Sources */,
+				C91647930FDDA45200B6FA19 /* OpenMetaBackup.m in Sources */,
+				C91647940FDDA45200B6FA19 /* OpenMetaPrefs.m in Sources */,
+				C9CAF0D110080E2400328AFF /* TaggerOMImporterInstallController.m in Sources */,
+				C9781D031076390E00A79940 /* NSArray+NSTableViewDataSource.m in Sources */,
+				C93CBC45107783300020539B /* PFMoveApplication.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		089C165CFE840E0CC02AAC07 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				089C165DFE840E0CC02AAC07 /* English */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		29B97318FDCFA39411CA2CEA /* MainMenu.nib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				29B97319FDCFA39411CA2CEA /* English */,
+			);
+			name = MainMenu.nib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		C01FCF4B08A954540054247B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)\"",
+					"\"$(SRCROOT)/../../SVN_working_copies/bghudappkit/build/Release\"",
+				);
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = Tagger_Prefix.pch;
+				GCC_PREPROCESSOR_DEFINITIONS = _DEBUG_TARGET;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Applications";
+				PRODUCT_NAME = Tagger;
+				WRAPPER_EXTENSION = app;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		C01FCF4C08A954540054247B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)\"",
+					"\"$(SRCROOT)/../../SVN_working_copies/bghudappkit/build/Release\"",
+				);
+				GCC_ENABLE_OBJC_GC = supported;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = Tagger_Prefix.pch;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Applications";
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				PRODUCT_NAME = Tagger;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		C01FCF4F08A954540054247B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+			};
+			name = Debug;
+		};
+		C01FCF5008A954540054247B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "Tagger" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C01FCF4B08A954540054247B /* Debug */,
+				C01FCF4C08A954540054247B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Tagger" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C01FCF4F08A954540054247B /* Debug */,
+				C01FCF5008A954540054247B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 29B97313FDCFA39411CA2CEA /* Project object */;
+}

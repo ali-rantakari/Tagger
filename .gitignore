@@ -1,0 +1,14 @@
+
+.DS_Store
+
+.hg*
+build
+deployment
+
+changelog.html
+deploymentScpTarget
+
+*.nib.orig
+*.pbxuser
+*.perspective
+*.perspectivev3
