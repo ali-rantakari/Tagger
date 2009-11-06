@@ -34,9 +34,6 @@
 
 // BUGS TO FIX:
 // 
-// - if a web page is opened for tagging but the user doesn't
-//   submit the changes and just quits instead, the .webloc file
-//   stays there, without any tags. we should delete it if this happens.
 
 
 #import "TaggerController.h"
@@ -46,7 +43,7 @@
 
 #define kAppSiteURL			@"http://hasseg.org/tagger/"
 #define kAppSiteURLPrefix	kAppSiteURL
-#define kVersionCheckURL [NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
+#define kVersionCheckURL	[NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
 
 #define FINDER_BUNDLE_ID		@"com.apple.finder"
 #define SAFARI_BUNDLE_ID		@"com.apple.Safari"
@@ -485,32 +482,6 @@ static NSString* frontAppBundleID = nil;
 				[[NSAlert alertWithError:setTagsErr] runModal];
 			}
 		}
-		
-		// if we've removed all tags, check if any of the tagged files
-		// are .webloc files we've created, and delete them if they
-		// are (not needed anymore since they don't have any tags)
-		if ([newTagsSet count] == 0)
-		{
-			for (NSString *filePath in self.filesToTag)
-			{
-				if ([[filePath stringByStandardizingPath]
-					 hasPrefix:[self.weblocFilesFolderPath stringByStandardizingPath]
-					 ])
-				{
-					NSError *removeItemError = nil;
-					BOOL success = [[NSFileManager defaultManager]
-									removeItemAtPath:filePath
-									error:&removeItemError
-									];
-					if (!success)
-					{
-						NSLog(@"ERROR: Could not delete .webloc file (%@): %@",
-							  filePath, [removeItemError localizedDescription]
-							  );
-					}
-				}
-			}
-		}
 	}
 	
 	[self terminateAppSafely];
@@ -591,11 +562,47 @@ doCommandBySelector:(SEL)command
 
 
 
+- (void) deleteWeblocFilesIfNecessary
+{
+	// check if any of the tagged files are .webloc files we've
+	// created, and delete them if they don't have any tags
+	
+	if ([self.filesToTag count] == 0)
+		return;
+	
+	for (NSString *filePath in self.filesToTag)
+	{
+		if (![[filePath stringByStandardizingPath]
+			  hasPrefix:[self.weblocFilesFolderPath stringByStandardizingPath]
+			  ])
+			continue;
+		
+		NSError *getTagsError = nil;
+		NSArray *tags = [OpenMeta getUserTags:filePath error:&getTagsError];
+		if (getTagsError != nil || [tags count] > 0)
+			continue;
+		
+		NSError *removeItemError = nil;
+		BOOL success = [[NSFileManager defaultManager]
+						removeItemAtPath:filePath
+						error:&removeItemError
+						];
+		if (!success)
+		{
+			NSLog(@"ERROR: Could not delete .webloc file (%@): %@",
+				  filePath, [removeItemError localizedDescription]
+				  );
+		}
+	}
+}
+
+
 
 - (void) terminateAppSafely
 {
 	[OpenMetaPrefs synchPrefs];
 	[OpenMetaBackup appIsTerminating];
+	[self deleteWeblocFilesIfNecessary];
 	[NSApp terminate:self];
 }
 
