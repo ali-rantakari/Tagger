@@ -12,12 +12,12 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="529"/>
+			<integer value="710"/>
 			<integer value="839"/>
 			<integer value="644"/>
 			<integer value="375"/>
-			<integer value="710"/>
 			<integer value="745"/>
+			<integer value="529"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -326,7 +326,7 @@
 								</object>
 								<object class="NSMenuItem" id="110336937">
 									<reference key="NSMenu" ref="585760336"/>
-									<string key="NSTitle">Install Spotlight Support</string>
+									<string key="NSTitle">Install Spotlight Support...</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
 									<reference key="NSOnImage" ref="884813485"/>
