@@ -47,6 +47,8 @@
 
 #define FINDER_BUNDLE_ID		@"com.apple.finder"
 #define SAFARI_BUNDLE_ID		@"com.apple.Safari"
+#define FIREFOX_BUNDLE_ID		@"org.mozilla.firefox"
+#define OPERA_BUNDLE_ID			@"com.operasoftware.Opera"
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
 
 // name of the folder where we save .webloc files we create
@@ -74,6 +76,7 @@
 		end repeat\n\
 		return retval\n\
 	end tell"
+
 #define GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT \
 	@"tell application \"Safari\"\n\
 		return name of front window\n\
@@ -82,6 +85,16 @@
 	@"tell application \"Safari\"\n\
 		return URL of document 1\n\
 	end tell"
+
+#define GET_CURRENT_FIREFOX_PAGE_TITLE_APPLESCRIPT \
+	@"tell application \"Firefox\" to return item 2 of (properties of front window as list)"
+#define GET_CURRENT_FIREFOX_PAGE_URL_APPLESCRIPT \
+	@"tell application \"Firefox\" to return item 3 of (properties of front window as list)"
+
+#define GET_CURRENT_OPERA_PAGE_TITLE_APPLESCRIPT \
+	@"tell application \"Opera\" to return item 2 of (GetWindowInfo of window 1)"
+#define GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT \
+	@"tell application \"Opera\" to return item 1 of (GetWindowInfo of window 1)"
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
 \n\
@@ -764,28 +777,51 @@ doCommandBySelector:(SEL)command
 				[getFinderSelectionAS release];
 			}
 		}
-		else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID])
+		else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID] ||
+				 [frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID] ||
+				 [frontAppBundleID isEqualToString:OPERA_BUNDLE_ID]
+				 )
 		{
 			// try to get the current page's title and URL from Safari via AppleScript
 			NSDictionary *appleScriptError = nil;
 			
-			NSString *getPageTitleASSource = GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT;
+			NSString *getPageTitleASSource = nil;
+			NSString *getPageURLASSource = nil;
+			if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID])
+			{
+				getPageTitleASSource = GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT;
+				getPageURLASSource = GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT;
+			}
+			else if ([frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID])
+			{
+				getPageTitleASSource = GET_CURRENT_FIREFOX_PAGE_TITLE_APPLESCRIPT;
+				getPageURLASSource = GET_CURRENT_FIREFOX_PAGE_URL_APPLESCRIPT;
+			}
+			else if ([frontAppBundleID isEqualToString:OPERA_BUNDLE_ID])
+			{
+				getPageTitleASSource = GET_CURRENT_OPERA_PAGE_TITLE_APPLESCRIPT;
+				getPageURLASSource = GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT;
+			}
+			
 			NSAppleScript *getPageTitleAS = [[NSAppleScript alloc] initWithSource:getPageTitleASSource];
 			NSAppleEventDescriptor *getPageTitleASOutput = [getPageTitleAS executeAndReturnError:&appleScriptError];
 			[getPageTitleAS release];
 			
 			if ([getPageTitleASOutput stringValue] == nil)
 			{
-				NSLog(@"ERROR: Could not get page title from Safari.");
+				NSLog(@"ERROR: Could not get page title from browser.");
 				if (appleScriptError != nil)
 					NSLog(@" AS error: %@", appleScriptError);
+				
+				NSString *errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org";
+				if ([frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID])
+					errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nNote that Firefox has had bugs related to AppleScript that might be causing this problem -- the workaround is to restart Firefox and try again. If this doesn't help, you can send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org";
 				[[NSAlert
 				 alertWithMessageText:@"Error tagging web page"
 				 defaultButton:@"Quit"
 				 alternateButton:nil
 				 otherButton:nil
-				 informativeTextWithFormat:
-				 @"Apologies -- there was an error when trying to tag this web page (could not get page title from Safari).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+				 informativeTextWithFormat:errorMsg
 				 ] runModal];
 				[self terminateAppSafely];
 			}
@@ -793,14 +829,13 @@ doCommandBySelector:(SEL)command
 					 ![[getPageTitleASOutput stringValue] hasPrefix:@"about://"]
 					 )
 			{
-				NSString *getPageURLASSource = GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT;
 				NSAppleScript *getPageURLAS = [[NSAppleScript alloc] initWithSource:getPageURLASSource];
 				NSAppleEventDescriptor *getPageURLASOutput = [getPageURLAS executeAndReturnError:&appleScriptError];
 				[getPageURLAS release];
 				
 				if ([getPageURLASOutput stringValue] == nil)
 				{
-					NSLog(@"ERROR: Could not get page URL from Safari.");
+					NSLog(@"ERROR: Could not get page URL from browser.");
 					if (appleScriptError != nil)
 						NSLog(@" AS error: %@", appleScriptError);
 					[[NSAlert
@@ -809,7 +844,7 @@ doCommandBySelector:(SEL)command
 					 alternateButton:nil
 					 otherButton:nil
 					 informativeTextWithFormat:
-					 @"Apologies -- there was an error when trying to tag this web page (could not get page URL from Safari).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+					 @"Apologies -- there was an error when trying to tag this web page (could not get page URL from browser).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
 					 ] runModal];
 					[self terminateAppSafely];
 				}
