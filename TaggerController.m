@@ -45,8 +45,15 @@
 #define kAppSiteURLPrefix	kAppSiteURL
 #define kVersionCheckURL [NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
 
-#define FINDER_BUNDLE_ID						@"com.apple.finder"
-#define PATH_FINDER_BUNDLE_ID					@"com.cocoatech.PathFinder"
+#define FINDER_BUNDLE_ID		@"com.apple.finder"
+#define SAFARI_BUNDLE_ID		@"com.apple.Safari"
+#define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
+
+// name of the folder where we save .webloc files we create
+// for tagging Safari bookmarks (under our own Application
+// support folder)
+#define SAFARI_BOOKMARKS_FOLDER_NAME @"Safari-Bookmarks"
+
 #define GET_SELECTED_FINDER_ITEMS_APPLESCRIPT	\
 	@"tell application \"Finder\"\n\
 		set retval to \"\"\n\
@@ -66,6 +73,19 @@
 			set retval to (retval & \"\n\" & x)\n\
 		end repeat\n\
 		return retval\n\
+	end tell"
+#define GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT \
+	@"tell application \"Safari\"\n\
+		return name of current tab of window 1\n\
+	end tell"
+#define GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT \
+	@"tell application \"Safari\"\n\
+		return URL of document 1\n\
+	end tell"
+#define CREATE_WEBLOC_FILE_APPLESCRIPT_FORMAT \
+	@"tell application \"Finder\"\n\
+		set wl to make new internet location file to \"%@\" at ((POSIX file \"%@\") as alias) with properties {name:\"%@\"}\n\
+		return (POSIX path of (wl as POSIX file))\n\
 	end tell"
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
@@ -115,6 +135,7 @@ static NSString* frontAppBundleID = nil;
 @synthesize originalTags;
 @synthesize versionCheckConnection;
 @synthesize titleArgument;
+@synthesize weblocFilesFolderPath;
 
 
 + (void) load
@@ -174,6 +195,51 @@ static NSString* frontAppBundleID = nil;
 	{
 		NSLog(@"ERROR: (in TaggerController -init) exception = %@", exception);
 	}
+	
+	
+	// create self.weblocFilesFolderPath if it doesn't exist
+	NSString *appSupportDirectory = [[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,
+																		  NSUserDomainMask,
+																		  YES
+																		  ) objectAtIndex:0] 
+									 stringByAppendingPathComponent:[[NSProcessInfo processInfo]
+																	 processName]
+									 ];
+	self.weblocFilesFolderPath = [appSupportDirectory stringByAppendingPathComponent:SAFARI_BOOKMARKS_FOLDER_NAME];
+	
+	DDLogInfo(@"self.weblocFilesFolderPath = %@", self.weblocFilesFolderPath);
+	
+	BOOL isDir = NO;
+	BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:self.weblocFilesFolderPath isDirectory:&isDir];
+	if (dirExists && !isDir)
+	{
+		NSLog(@"ERROR: a file exists in the app data directory's webloc folder location: %@", self.weblocFilesFolderPath);
+		[NSAlert
+		 alertWithMessageText:@"Error in Application Support Folder"
+		 defaultButton:@"Quit"
+		 alternateButton:nil
+		 otherButton:nil
+		 informativeTextWithFormat:@"A file exists where the application's webloc folder should be: %@ Please delete this file and retry.", self.weblocFilesFolderPath
+		 ];
+		[self terminateAppSafely];
+	}
+	else if (!dirExists)
+	{
+		NSError *createDirError = nil;
+		BOOL success = [[NSFileManager defaultManager]
+						createDirectoryAtPath:self.weblocFilesFolderPath
+						withIntermediateDirectories:YES
+						attributes:nil
+						error:&createDirError
+						];
+		if (!success || createDirError != nil)
+		{
+			NSLog(@"ERROR: could not create app data directory's webloc folder: %@", self.weblocFilesFolderPath);
+			[NSAlert alertWithError:createDirError];
+			[self terminateAppSafely];
+		}
+	}
+	
 	
 	return self;
 }
@@ -379,41 +445,67 @@ static NSString* frontAppBundleID = nil;
 	{
 		DDLogInfo(@"[tagsField objectValue] = %@", [tagsField objectValue]);
 		
-		NSSet *tagsToAddSet = [NSSet setWithArray:(NSArray *)[tagsField objectValue]];
+		NSSet *newTagsSet = [NSSet setWithArray:(NSArray *)[tagsField objectValue]];
 		
 		[tagsField setEnabled:NO];
 		
 		DDLogInfo(@"committing...");
-		DDLogInfo(@"tagsToAddSet = %@", tagsToAddSet);
+		DDLogInfo(@"newTagsSet = %@", newTagsSet);
 		
 		NSSet *originalTagsSet = [NSSet setWithArray:self.originalTags];
-		BOOL tagsModified = (![originalTagsSet isEqualToSet:tagsToAddSet]);
+		BOOL tagsModified = (![originalTagsSet isEqualToSet:newTagsSet]);
 		
 		DDLogInfo(@"tagsModified = %@", ((tagsModified)?@"YES":@"NO"));
 		
 		if (tagsModified)
 		{
-			NSArray *tagsToAdd = [tagsToAddSet allObjects];
+			NSArray *newTagsArray = [newTagsSet allObjects];
 			
 			NSError *setTagsErr;
 			if ([self.filesToTag count] == 1)
 				setTagsErr = [OpenMeta
-							  setUserTags:tagsToAdd
+							  setUserTags:newTagsArray
 							  path:[self.filesToTag objectAtIndex:0]
 							  ];
 			else
 				setTagsErr = [OpenMeta
 							  setCommonUserTags:self.filesToTag
 							  originalCommonTags:self.originalTags
-							  replaceWith:tagsToAdd
+							  replaceWith:newTagsArray
 							  ];
 			
 			if (setTagsErr == nil)
-				[OpenMetaPrefs updatePrefsRecentTags:self.originalTags newTags:tagsToAdd];
+				[OpenMetaPrefs updatePrefsRecentTags:self.originalTags newTags:newTagsArray];
 			else
 			{
 				NSLog(@"error setting tags: %@", [setTagsErr description]);
 				[[NSAlert alertWithError:setTagsErr] runModal];
+			}
+		}
+		
+		// if we've removed all tags, check if any of the tagged files
+		// are .webloc files we've created, and delete them if they
+		// are (not needed anymore since they don't have any tags)
+		if ([newTagsSet count] == 0)
+		{
+			for (NSString *filePath in self.filesToTag)
+			{
+				if ([[filePath stringByStandardizingPath]
+					 hasPrefix:[self.weblocFilesFolderPath stringByStandardizingPath]
+					 ])
+				{
+					NSError *removeItemError = nil;
+					BOOL success = [[NSFileManager defaultManager]
+									removeItemAtPath:filePath
+									error:&removeItemError
+									];
+					if (!success)
+					{
+						NSLog(@"ERROR: Could not delete .webloc file (%@): %@",
+							  filePath, [removeItemError localizedDescription]
+							  );
+					}
+				}
 			}
 		}
 	}
@@ -534,6 +626,7 @@ doCommandBySelector:(SEL)command
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
 	DDLogInfo(@"applicationDidFinishLaunching");
+	DDLogInfo(@"frontAppBundleID = %@", frontAppBundleID);
 	
 	// check if the Spotlight importer has been installed (we do this only
 	// once for each user)
@@ -550,35 +643,119 @@ doCommandBySelector:(SEL)command
 	
 	if ([self.filesToTag count] == 0 && frontAppBundleID != nil)
 	{
-		// try to get the selected files in Finder or Path Finder via AppleScript
-		NSDictionary *appleScriptError;
-		NSString *asSource = nil;
-		if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID])
-			asSource = GET_SELECTED_FINDER_ITEMS_APPLESCRIPT;
-		else if ([frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
-			asSource = GET_SELECTED_PATH_FINDER_ITEMS_APPLESCRIPT;
-		
-		if (asSource != nil)
+		if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID] ||
+			[frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
 		{
-			NSAppleScript *getFinderSelectionAS = [[NSAppleScript alloc]
-												   initWithSource:asSource
-												   ];
-			NSAppleEventDescriptor *ret = [getFinderSelectionAS executeAndReturnError:&appleScriptError];
+			// try to get the selected files in Finder or Path Finder via AppleScript
+			NSDictionary *appleScriptError = nil;
+			NSString *getItemsASSource = nil;
+			if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID])
+				getItemsASSource = GET_SELECTED_FINDER_ITEMS_APPLESCRIPT;
+			else if ([frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
+				getItemsASSource = GET_SELECTED_PATH_FINDER_ITEMS_APPLESCRIPT;
 			
-			if ([ret stringValue] != nil)
+			if (getItemsASSource != nil)
 			{
-				NSArray *separatedPaths = [[[ret stringValue]
-											stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
-											] componentsSeparatedByString:@"\n"
-										   ];
-				NSString *thisPath;
-				for (thisPath in separatedPaths)
+				NSAppleScript *getFinderSelectionAS = [[NSAppleScript alloc] initWithSource:getItemsASSource];
+				NSAppleEventDescriptor *ret = [getFinderSelectionAS executeAndReturnError:&appleScriptError];
+				
+				if ([ret stringValue] != nil)
 				{
-					[self addFileToTag:thisPath];
+					NSArray *separatedPaths = [[[ret stringValue]
+												stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
+												] componentsSeparatedByString:@"\n"
+											   ];
+					NSString *thisPath;
+					for (thisPath in separatedPaths)
+					{
+						[self addFileToTag:thisPath];
+					}
+				}
+				
+				[getFinderSelectionAS release];
+			}
+		}
+		else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID])
+		{
+			// try to get the current page's title and URL from Safari via AppleScript
+			NSDictionary *appleScriptError = nil;
+			
+			NSString *getPageTitleASSource = GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT;
+			NSAppleScript *getPageTitleAS = [[NSAppleScript alloc] initWithSource:getPageTitleASSource];
+			NSAppleEventDescriptor *getPageTitleASOutput = [getPageTitleAS executeAndReturnError:&appleScriptError];
+			[getPageTitleAS release];
+			
+			if ([getPageTitleASOutput stringValue] == nil)
+			{
+				NSLog(@"ERROR: Could not get page title from Safari.");
+			}
+			else
+			{
+				self.titleArgument = [getPageTitleASOutput stringValue];
+				
+				NSString *getPageURLASSource = GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT;
+				NSAppleScript *getPageURLAS = [[NSAppleScript alloc] initWithSource:getPageURLASSource];
+				NSAppleEventDescriptor *getPageURLASOutput = [getPageURLAS executeAndReturnError:&appleScriptError];
+				[getPageURLAS release];
+				
+				if ([getPageURLASOutput stringValue] == nil)
+				{
+					NSLog(@"ERROR: Could not get page URL from Safari.");
+				}
+				else
+				{
+					// create a new .webloc file into Tagger's application support folder
+					// (instead of the caches folder since we want these to persist and
+					// be backed up by Time Machine -- caches may be deleted at any time
+					// and they are not backed up.)
+					
+					NSString *suggestedFilename = [self.titleArgument
+												   stringByReplacingOccurrencesOfString:@":"
+												   withString:@"-"];
+					suggestedFilename = [suggestedFilename
+										 stringByReplacingOccurrencesOfString:@"/"
+										 withString:@" - "];
+					NSString *suggestedFilenameWithExt = [self.weblocFilesFolderPath
+														  stringByAppendingPathComponent:
+														  [suggestedFilename stringByAppendingString:@".webloc"]
+														  ];
+					
+					DDLogInfo(@"suggestedFilename = %@", suggestedFilename);
+					
+					NSString *pathToWeblocFileToTag = nil;
+					
+					if ([[NSFileManager defaultManager] fileExistsAtPath:suggestedFilenameWithExt])
+						pathToWeblocFileToTag = suggestedFilenameWithExt;
+					
+					if (pathToWeblocFileToTag == nil)
+					{
+						NSString *createWeblocASSource = [NSString
+														  stringWithFormat:
+														  CREATE_WEBLOC_FILE_APPLESCRIPT_FORMAT,
+														  [getPageURLASOutput stringValue],
+														  self.weblocFilesFolderPath,
+														  suggestedFilename
+														  ];
+						NSAppleScript *createWeblocAS = [[NSAppleScript alloc] initWithSource:createWeblocASSource];
+						NSAppleEventDescriptor *createWeblocASOutput = [createWeblocAS executeAndReturnError:&appleScriptError];
+						[createWeblocAS release];
+						
+						if ([createWeblocASOutput stringValue] != nil)
+						{
+							// [createWeblocASOutput stringValue] contains the actual
+							// filename for the .webloc file that Finder created
+							DDLogInfo(@"[createWeblocASOutput stringValue] = %@", [createWeblocASOutput stringValue]);
+							pathToWeblocFileToTag = [self.weblocFilesFolderPath stringByAppendingPathComponent:[createWeblocASOutput stringValue]];
+						}
+					}
+					
+					DDLogInfo(@"pathToWeblocFileToTag = %@", pathToWeblocFileToTag);
+					if (pathToWeblocFileToTag != nil)
+					{
+						[self addFileToTag:pathToWeblocFileToTag];
+					}
 				}
 			}
-			
-			[getFinderSelectionAS release];
 		}
 	}
 	
