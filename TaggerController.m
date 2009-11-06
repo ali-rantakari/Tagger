@@ -22,10 +22,6 @@
 
 // TODO:
 // 
-// - How to deal with tagging web pages at different URLs that
-//   have the same title? Right now the same .webloc file will simply
-//   be used for both.
-// 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
 // 
 // - Make the token field colors more pleasant
@@ -607,32 +603,83 @@ doCommandBySelector:(SEL)command
 
 
 
-- (NSString *) getWeblocFilePathForTitle:(NSString *)title URL:(NSString *)url
+- (NSString *) getWeblocFilePathForTitle:(NSString *)title
+									 URL:(NSString *)url
 {
 	// create a new .webloc file into Tagger's application support folder
 	// (instead of the caches folder since we want these to persist and
 	// be backed up by Time Machine -- caches may be deleted at any time
 	// and they are not backed up.)
 	
-	// 'clean up' the page title a bit before using it as a file name
-	NSString *suggestedFilename = [title
-								   stringByReplacingOccurrencesOfString:@"/"
-								   withString:@"-"];
-	NSString *pathToWeblocFileToTag = [self.weblocFilesFolderPath
-										  stringByAppendingPathComponent:
-										  [suggestedFilename stringByAppendingString:@".webloc"]
-										  ];
+	// remove the 'anchor' part of the URL (we want to consider only
+	// 'full' pages, not parts thereof)
+	NSRange hashRange = [url rangeOfString:@"#" options:NSBackwardsSearch];
+	if (hashRange.location != NSNotFound)
+		url = [url substringToIndex:hashRange.location];
 	
-	if ([[NSFileManager defaultManager] fileExistsAtPath:pathToWeblocFileToTag])
-		return pathToWeblocFileToTag;
+	// 'clean up' the page title a bit before using it as a file name.
+	// the primary filename & path is what we'd like to call this webloc
+	// file and the secondary is a more unique version of the filename
+	// that we'll use to avoid collisions (i.e. two web pages at different
+	// URLs )
+	NSString *primaryFilename = [title
+								 stringByReplacingOccurrencesOfString:@"/"
+								 withString:@"-"];
+	NSString *primaryPath = [self.weblocFilesFolderPath
+							 stringByAppendingPathComponent:
+							 [primaryFilename stringByAppendingString:@".webloc"]
+							 ];
 	
-	// create the .webloc file
-	NSDictionary *weblocContentsDict = [NSDictionary
-										dictionaryWithObject:url
-										forKey:@"URL"
-										];
-	[weblocContentsDict writeToFile:pathToWeblocFileToTag atomically:YES];
-	return pathToWeblocFileToTag;
+	NSString *urlForSecondaryFilename = [url
+										 stringByReplacingOccurrencesOfString:@"://"
+										 withString:@"::"
+										 ];
+	urlForSecondaryFilename = [urlForSecondaryFilename
+							   stringByReplacingOccurrencesOfString:@"/"
+							   withString:@":"
+							   ];
+	NSString *secondaryFilename = [primaryFilename
+								   stringByAppendingString:
+								   [NSString stringWithFormat:@" (%@)", urlForSecondaryFilename]
+								   ];
+	NSString *secondaryPath = [self.weblocFilesFolderPath
+							   stringByAppendingPathComponent:
+							   [secondaryFilename stringByAppendingString:@".webloc"]
+							   ];
+	
+	NSString *newWeblocPath = primaryPath;
+	
+	if ([[NSFileManager defaultManager] fileExistsAtPath:primaryPath])
+	{
+		// make sure the URL matches as well:
+		NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:primaryPath];
+		if ([[d objectForKey:@"URL"] isEqual:url])
+			return primaryPath;
+		newWeblocPath = secondaryPath;
+	}
+	
+	if ([[NSFileManager defaultManager] fileExistsAtPath:secondaryPath])
+	{
+		// make sure the URL matches as well:
+		NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:secondaryPath];
+		if ([[d objectForKey:@"URL"] isEqual:url])
+			return secondaryPath;
+		newWeblocPath = nil;
+	}
+	
+	if (newWeblocPath != nil)
+	{
+		NSDictionary *weblocContentsDict = [NSDictionary
+											dictionaryWithObject:url
+											forKey:@"URL"
+											];
+		[weblocContentsDict writeToFile:newWeblocPath atomically:YES];
+		return newWeblocPath;
+	}
+	
+	// both the primary and secondary filenames/paths already exist
+	// but point to different URLs, so we don't know what to do.
+	return nil;
 }
 
 
@@ -746,8 +793,6 @@ doCommandBySelector:(SEL)command
 					 ![[getPageTitleASOutput stringValue] hasPrefix:@"about://"]
 					 )
 			{
-				self.titleArgument = [getPageTitleASOutput stringValue];
-				
 				NSString *getPageURLASSource = GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT;
 				NSAppleScript *getPageURLAS = [[NSAppleScript alloc] initWithSource:getPageURLASSource];
 				NSAppleEventDescriptor *getPageURLASOutput = [getPageURLAS executeAndReturnError:&appleScriptError];
@@ -771,11 +816,20 @@ doCommandBySelector:(SEL)command
 				else
 				{
 					NSString *weblocFilePath = [self
-												getWeblocFilePathForTitle:self.titleArgument
+												getWeblocFilePathForTitle:[getPageTitleASOutput stringValue]
 												URL:[getPageURLASOutput stringValue]
 												];
 					if (weblocFilePath != nil)
+					{
 						[self addFileToTag:weblocFilePath];
+						
+						NSString *weblocFileName = [weblocFilePath lastPathComponent];
+						NSRange dotRange = [weblocFileName rangeOfString:@"." options:NSBackwardsSearch];
+						if (dotRange.location != NSNotFound)
+							self.titleArgument = [weblocFileName substringToIndex:dotRange.location];
+						else
+							self.titleArgument = weblocFileName;
+					}
 				}
 			}
 		}
