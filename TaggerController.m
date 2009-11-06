@@ -34,6 +34,8 @@
 
 // BUGS TO FIX:
 // 
+// - browsers' "downloads" windows causing trouble (any other
+//   secondary browser windows that we need to ignore?)
 
 
 #import "TaggerController.h"
@@ -48,6 +50,7 @@
 #define FINDER_BUNDLE_ID		@"com.apple.finder"
 #define SAFARI_BUNDLE_ID		@"com.apple.Safari"
 #define FIREFOX_BUNDLE_ID		@"org.mozilla.firefox"
+#define CAMINO_BUNDLE_ID		@"org.mozilla.camino"
 #define OPERA_BUNDLE_ID			@"com.operasoftware.Opera"
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
 
@@ -78,13 +81,9 @@
 	end tell"
 
 #define GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT \
-	@"tell application \"Safari\"\n\
-		return name of front window\n\
-	end tell"
+	@"tell application \"Safari\" to return name of front window"
 #define GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT \
-	@"tell application \"Safari\"\n\
-		return URL of document 1\n\
-	end tell"
+	@"tell application \"Safari\" to return URL of front document"
 
 #define GET_CURRENT_FIREFOX_PAGE_TITLE_APPLESCRIPT \
 	@"tell application \"Firefox\" to return item 2 of (properties of front window as list)"
@@ -95,6 +94,11 @@
 	@"tell application \"Opera\" to return item 2 of (GetWindowInfo of window 1)"
 #define GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT \
 	@"tell application \"Opera\" to return item 1 of (GetWindowInfo of window 1)"
+
+#define GET_CURRENT_CAMINO_PAGE_TITLE_APPLESCRIPT \
+	@"tell application \"Camino\" to return name of front window"
+#define GET_CURRENT_CAMINO_PAGE_URL_APPLESCRIPT \
+	@"tell application \"Camino\" to return URL of current tab of front window"
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
 \n\
@@ -271,6 +275,9 @@ static NSString* frontAppBundleID = nil;
 
 - (void) awakeFromNib
 {
+#ifdef _DEBUG_TARGET
+	[mainWindow setTitle:@"Tagger (DEBUG)"];
+#endif	
 	// if executed from the command line, we don't get focus
 	// by default so let's ask for it (ignoring other apps
 	// since I think we can safely assume, due to the nature
@@ -624,7 +631,7 @@ doCommandBySelector:(SEL)command
 	// be backed up by Time Machine -- caches may be deleted at any time
 	// and they are not backed up.)
 	
-	// remove the 'anchor' part of the URL (we want to consider only
+	// remove the anchor part of the URL (we want to consider only
 	// 'full' pages, not parts thereof)
 	NSRange hashRange = [url rangeOfString:@"#" options:NSBackwardsSearch];
 	if (hashRange.location != NSNotFound)
@@ -634,7 +641,7 @@ doCommandBySelector:(SEL)command
 	// the primary filename & path is what we'd like to call this webloc
 	// file and the secondary is a more unique version of the filename
 	// that we'll use to avoid collisions (i.e. two web pages at different
-	// URLs )
+	// URLs with the same title)
 	NSString *primaryFilename = [title
 								 stringByReplacingOccurrencesOfString:@"/"
 								 withString:@"-"];
@@ -779,7 +786,8 @@ doCommandBySelector:(SEL)command
 		}
 		else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID] ||
 				 [frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID] ||
-				 [frontAppBundleID isEqualToString:OPERA_BUNDLE_ID]
+				 [frontAppBundleID isEqualToString:OPERA_BUNDLE_ID] ||
+				 [frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID] 
 				 )
 		{
 			// try to get the current page's title and URL from Safari via AppleScript
@@ -801,6 +809,11 @@ doCommandBySelector:(SEL)command
 			{
 				getPageTitleASSource = GET_CURRENT_OPERA_PAGE_TITLE_APPLESCRIPT;
 				getPageURLASSource = GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT;
+			}
+			else if ([frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID])
+			{
+				getPageTitleASSource = GET_CURRENT_CAMINO_PAGE_TITLE_APPLESCRIPT;
+				getPageURLASSource = GET_CURRENT_CAMINO_PAGE_URL_APPLESCRIPT;
 			}
 			
 			NSAppleScript *getPageTitleAS = [[NSAppleScript alloc] initWithSource:getPageTitleASSource];
@@ -825,9 +838,7 @@ doCommandBySelector:(SEL)command
 				 ] runModal];
 				[self terminateAppSafely];
 			}
-			else if (![[getPageTitleASOutput stringValue] hasPrefix:@"topsites://"] &&
-					 ![[getPageTitleASOutput stringValue] hasPrefix:@"about://"]
-					 )
+			else
 			{
 				NSAppleScript *getPageURLAS = [[NSAppleScript alloc] initWithSource:getPageURLASSource];
 				NSAppleEventDescriptor *getPageURLASOutput = [getPageURLAS executeAndReturnError:&appleScriptError];
@@ -848,8 +859,16 @@ doCommandBySelector:(SEL)command
 					 ] runModal];
 					[self terminateAppSafely];
 				}
-				else
+				else if (![[getPageURLASOutput stringValue] hasPrefix:@"topsites://"] &&
+						 ![[getPageURLASOutput stringValue] hasPrefix:@"about:"] &&
+						 ([[[getPageURLASOutput stringValue]
+							stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
+							] length] > 0)
+						 )
 				{
+					DDLogInfo(@"title = %@", [getPageTitleASOutput stringValue]);
+					DDLogInfo(@"url = %@", [getPageURLASOutput stringValue]);
+					
 					NSString *weblocFilePath = [self
 												getWeblocFilePathForTitle:[getPageTitleASOutput stringValue]
 												URL:[getPageURLASOutput stringValue]
