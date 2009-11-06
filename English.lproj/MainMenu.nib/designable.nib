@@ -12,12 +12,12 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="710"/>
-			<integer value="839"/>
+			<integer value="744"/>
 			<integer value="644"/>
-			<integer value="375"/>
-			<integer value="745"/>
 			<integer value="529"/>
+			<integer value="839"/>
+			<integer value="375"/>
+			<integer value="710"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -995,10 +995,10 @@ b3IgZm9yIHRoZSB3aG9sZSBzeXN0ZW0gKGFsbCB1c2VycykuA</string>
 							<object class="NSTextFieldCell" key="NSCell" id="729227488">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">1346371584</int>
-								<string type="base64-UTF8" key="NSContents">Q29weXJpZ2h0IChjKSAyMDA4LTIwMDkgQWxpIFJhbnRha2FyaS4KClRhZ2dlciBpcyBsaWNlbnNlZCB1
-bmRlciB0aGUgR05VIEdlbmVyYWwgUHVibGljIExpY2Vuc2UsIHZlcnNpb24gMi4KClRhZ2dlciBpbmNs
-dWRlcyBOU0ltYWdlK1F1aWNrbG9vayBjb2RlIGJ5IE1hdHQgR2VtbWVsbCBhbmQgTGV0c01vdmUgY29k
-ZSBieSBBbmR5IEtpbSwgSm9obiBCcmF5dG9uLCBDaGFkIFNlbGxlcnMgYW5kIEVpdGEgSGF5YXNoaS4</string>
+								<string type="base64-UTF8" key="NSContents">Q29weXJpZ2h0IMKpIDIwMDgtMjAwOSBBbGkgUmFudGFrYXJpLgoKVGFnZ2VyIGlzIGxpY2Vuc2VkIHVu
+ZGVyIHRoZSBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSwgdmVyc2lvbiAyLgoKVGFnZ2VyIGluY2x1
+ZGVzIE5TSW1hZ2UrUXVpY2tsb29rIGNvZGUgYnkgTWF0dCBHZW1tZWxsIGFuZCBMZXRzTW92ZSBjb2Rl
+IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</string>
 								<object class="NSFont" key="NSSupport" id="961623726">
 									<string key="NSName">LucidaGrande</string>
 									<double key="NSSize">11</double>
