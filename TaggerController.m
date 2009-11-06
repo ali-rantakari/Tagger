@@ -34,6 +34,9 @@
 
 // BUGS TO FIX:
 // 
+// - if a web page is opened for tagging but the user doesn't
+//   submit the changes and just quits instead, the .webloc file
+//   stays there, without any tags. we should delete it if this happens.
 
 
 #import "TaggerController.h"
@@ -76,7 +79,7 @@
 	end tell"
 #define GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT \
 	@"tell application \"Safari\"\n\
-		return name of current tab of window 1\n\
+		return name of front window\n\
 	end tell"
 #define GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT \
 	@"tell application \"Safari\"\n\
@@ -750,33 +753,13 @@ doCommandBySelector:(SEL)command
 					
 					if (pathToWeblocFileToTag == nil)
 					{
-						// escape stuff in the filename so that we can safely
-						// insert it into the AppleScript string without causing
-						// problems
-						NSString *suggestedFilenameEscaped = suggestedFilename;
-						suggestedFilenameEscaped = [suggestedFilenameEscaped
-													stringByReplacingOccurrencesOfString:@"\\"
-													withString:@"\\\\"];
-						suggestedFilenameEscaped = [suggestedFilenameEscaped
-													stringByReplacingOccurrencesOfString:@"\""
-													withString:@"\\\""];
-						// we change : to / because the AppleScript we're
-						// using is defining a 'POSIX file' and when one of
-						// those is specified as having a / in its name in
-						// AppleScript, it will be translated to a colon : in
-						// the *actual* filename in the filesystem (Finder still
-						// displays colons as forward slashes).
-						suggestedFilenameEscaped = [suggestedFilenameEscaped
-													stringByReplacingOccurrencesOfString:@":"
-													withString:@"/"];
-						DDLogInfo(@"suggestedFilenameEscaped = %@", suggestedFilenameEscaped);
-						
+						NSString *tempWeblocFileName = @"tempWeblocFile";
 						NSString *createWeblocASSource = [NSString
 														  stringWithFormat:
 														  CREATE_WEBLOC_FILE_APPLESCRIPT_FORMAT,
 														  [getPageURLASOutput stringValue],
 														  self.weblocFilesFolderPath,
-														  suggestedFilename
+														  tempWeblocFileName
 														  ];
 						NSAppleScript *createWeblocAS = [[NSAppleScript alloc] initWithSource:createWeblocASSource];
 						NSAppleEventDescriptor *createWeblocASOutput = [createWeblocAS executeAndReturnError:&appleScriptError];
@@ -785,47 +768,40 @@ doCommandBySelector:(SEL)command
 						if ([createWeblocASOutput stringValue] != nil)
 						{
 							// [createWeblocASOutput stringValue] contains the actual
-							// filename for the .webloc file that Finder created. if it's
-							// different from what we anticipated, we don't want to use
-							// it because otherwise we won't be able to open the same
-							// file again if the user wants to edit the same page's
-							// tags.
+							// filename for the .webloc file that Finder created. We'll
+							// just rename it to the name we want it to be.
 							DDLogInfo(@"[createWeblocASOutput stringValue] = %@", [createWeblocASOutput stringValue]);
 							
-							if ([[suggestedFilepathWithExt stringByStandardizingPath]
-								 isEqualToString:
-								 [[self.weblocFilesFolderPath
-								  stringByAppendingPathComponent:[createWeblocASOutput stringValue]
-								  ] stringByStandardizingPath]
-								 ])
+							NSError *moveError = nil;
+							BOOL moveSuccess = [[NSFileManager defaultManager]
+												moveItemAtPath:[self.weblocFilesFolderPath stringByAppendingPathComponent:[createWeblocASOutput stringValue]]
+												toPath:suggestedFilepathWithExt
+												error:&moveError
+												];
+							if (moveSuccess)
 							{
 								pathToWeblocFileToTag = suggestedFilepathWithExt;
 							}
 							else
 							{
-								NSLog(@"ERROR: Finder disagrees about .webloc file naming:\nAnticipated: %@\nFinder created: %@",
-									  [suggestedFilepathWithExt stringByStandardizingPath],
-									  [[self.weblocFilesFolderPath
-										stringByAppendingPathComponent:[createWeblocASOutput stringValue]
-										] stringByStandardizingPath]
+								NSLog(@"ERROR: could not rename temporary .webloc file (%@): %@",
+									  [createWeblocASOutput stringValue], [moveError localizedDescription]
 									  );
 								[[NSAlert
-								 alertWithMessageText:@"Error with Safari page title"
-								 defaultButton:@"Quit"
-								 alternateButton:nil
-								 otherButton:nil
-								 informativeTextWithFormat:
-								 @"Apologies -- there was an error when trying to tag this web page.\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
-								 ] runModal];
+								  alertWithMessageText:@"Error tagging web page"
+								  defaultButton:@"Quit"
+								  alternateButton:nil
+								  otherButton:nil
+								  informativeTextWithFormat:
+								  @"Apologies -- there was an error when trying to tag this web page (could not rename temporary .webloc file).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+								  ] runModal];
 								[self terminateAppSafely];
 							}
-
 						}
 						else
 						{
 							NSLog(@"ERROR: Could not get create .webloc file.");
 							NSLog(@"  suggestedFilename = %@", suggestedFilename);
-							NSLog(@"  suggestedFilenameEscaped = %@", suggestedFilenameEscaped);
 							if (appleScriptError != nil)
 								NSLog(@" AS error: %@", appleScriptError);
 							[[NSAlert
