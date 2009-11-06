@@ -214,13 +214,13 @@ static NSString* frontAppBundleID = nil;
 	if (dirExists && !isDir)
 	{
 		NSLog(@"ERROR: a file exists in the app data directory's webloc folder location: %@", self.weblocFilesFolderPath);
-		[NSAlert
+		[[NSAlert
 		 alertWithMessageText:@"Error in Application Support Folder"
 		 defaultButton:@"Quit"
 		 alternateButton:nil
 		 otherButton:nil
 		 informativeTextWithFormat:@"A file exists where the application's webloc folder should be: %@ Please delete this file and retry.", self.weblocFilesFolderPath
-		 ];
+		 ] runModal];
 		[self terminateAppSafely];
 	}
 	else if (!dirExists)
@@ -688,6 +688,17 @@ doCommandBySelector:(SEL)command
 			if ([getPageTitleASOutput stringValue] == nil)
 			{
 				NSLog(@"ERROR: Could not get page title from Safari.");
+				if (appleScriptError != nil)
+					NSLog(@" AS error: %@", appleScriptError);
+				[[NSAlert
+				 alertWithMessageText:@"Error tagging web page"
+				 defaultButton:@"Quit"
+				 alternateButton:nil
+				 otherButton:nil
+				 informativeTextWithFormat:
+				 @"Apologies -- there was an error when trying to tag this web page (could not get page title from Safari).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+				 ] runModal];
+				[self terminateAppSafely];
 			}
 			else
 			{
@@ -701,6 +712,17 @@ doCommandBySelector:(SEL)command
 				if ([getPageURLASOutput stringValue] == nil)
 				{
 					NSLog(@"ERROR: Could not get page URL from Safari.");
+					if (appleScriptError != nil)
+						NSLog(@" AS error: %@", appleScriptError);
+					[[NSAlert
+					 alertWithMessageText:@"Error tagging web page"
+					 defaultButton:@"Quit"
+					 alternateButton:nil
+					 otherButton:nil
+					 informativeTextWithFormat:
+					 @"Apologies -- there was an error when trying to tag this web page (could not get page URL from Safari).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+					 ] runModal];
+					[self terminateAppSafely];
 				}
 				else
 				{
@@ -709,13 +731,12 @@ doCommandBySelector:(SEL)command
 					// be backed up by Time Machine -- caches may be deleted at any time
 					// and they are not backed up.)
 					
+					// try to 'clean up' the page title before using it as
+					// a file name
 					NSString *suggestedFilename = [self.titleArgument
-												   stringByReplacingOccurrencesOfString:@":"
+												   stringByReplacingOccurrencesOfString:@"/"
 												   withString:@"-"];
-					suggestedFilename = [suggestedFilename
-										 stringByReplacingOccurrencesOfString:@"/"
-										 withString:@" - "];
-					NSString *suggestedFilenameWithExt = [self.weblocFilesFolderPath
+					NSString *suggestedFilepathWithExt = [self.weblocFilesFolderPath
 														  stringByAppendingPathComponent:
 														  [suggestedFilename stringByAppendingString:@".webloc"]
 														  ];
@@ -724,11 +745,32 @@ doCommandBySelector:(SEL)command
 					
 					NSString *pathToWeblocFileToTag = nil;
 					
-					if ([[NSFileManager defaultManager] fileExistsAtPath:suggestedFilenameWithExt])
-						pathToWeblocFileToTag = suggestedFilenameWithExt;
+					if ([[NSFileManager defaultManager] fileExistsAtPath:suggestedFilepathWithExt])
+						pathToWeblocFileToTag = suggestedFilepathWithExt;
 					
 					if (pathToWeblocFileToTag == nil)
 					{
+						// escape stuff in the filename so that we can safely
+						// insert it into the AppleScript string without causing
+						// problems
+						NSString *suggestedFilenameEscaped = suggestedFilename;
+						suggestedFilenameEscaped = [suggestedFilenameEscaped
+													stringByReplacingOccurrencesOfString:@"\\"
+													withString:@"\\\\"];
+						suggestedFilenameEscaped = [suggestedFilenameEscaped
+													stringByReplacingOccurrencesOfString:@"\""
+													withString:@"\\\""];
+						// we change : to / because the AppleScript we're
+						// using is defining a 'POSIX file' and when one of
+						// those is specified as having a / in its name in
+						// AppleScript, it will be translated to a colon : in
+						// the *actual* filename in the filesystem (Finder still
+						// displays colons as forward slashes).
+						suggestedFilenameEscaped = [suggestedFilenameEscaped
+													stringByReplacingOccurrencesOfString:@":"
+													withString:@"/"];
+						DDLogInfo(@"suggestedFilenameEscaped = %@", suggestedFilenameEscaped);
+						
 						NSString *createWeblocASSource = [NSString
 														  stringWithFormat:
 														  CREATE_WEBLOC_FILE_APPLESCRIPT_FORMAT,
@@ -743,10 +785,60 @@ doCommandBySelector:(SEL)command
 						if ([createWeblocASOutput stringValue] != nil)
 						{
 							// [createWeblocASOutput stringValue] contains the actual
-							// filename for the .webloc file that Finder created
+							// filename for the .webloc file that Finder created. if it's
+							// different from what we anticipated, we don't want to use
+							// it because otherwise we won't be able to open the same
+							// file again if the user wants to edit the same page's
+							// tags.
 							DDLogInfo(@"[createWeblocASOutput stringValue] = %@", [createWeblocASOutput stringValue]);
-							pathToWeblocFileToTag = [self.weblocFilesFolderPath stringByAppendingPathComponent:[createWeblocASOutput stringValue]];
+							
+							if ([[suggestedFilepathWithExt stringByStandardizingPath]
+								 isEqualToString:
+								 [[self.weblocFilesFolderPath
+								  stringByAppendingPathComponent:[createWeblocASOutput stringValue]
+								  ] stringByStandardizingPath]
+								 ])
+							{
+								pathToWeblocFileToTag = suggestedFilepathWithExt;
+							}
+							else
+							{
+								NSLog(@"ERROR: Finder disagrees about .webloc file naming:\nAnticipated: %@\nFinder created: %@",
+									  [suggestedFilepathWithExt stringByStandardizingPath],
+									  [[self.weblocFilesFolderPath
+										stringByAppendingPathComponent:[createWeblocASOutput stringValue]
+										] stringByStandardizingPath]
+									  );
+								[[NSAlert
+								 alertWithMessageText:@"Error with Safari page title"
+								 defaultButton:@"Quit"
+								 alternateButton:nil
+								 otherButton:nil
+								 informativeTextWithFormat:
+								 @"Apologies -- there was an error when trying to tag this web page.\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+								 ] runModal];
+								[self terminateAppSafely];
+							}
+
 						}
+						else
+						{
+							NSLog(@"ERROR: Could not get create .webloc file.");
+							NSLog(@"  suggestedFilename = %@", suggestedFilename);
+							NSLog(@"  suggestedFilenameEscaped = %@", suggestedFilenameEscaped);
+							if (appleScriptError != nil)
+								NSLog(@" AS error: %@", appleScriptError);
+							[[NSAlert
+							 alertWithMessageText:@"Error tagging web page"
+							 defaultButton:@"Quit"
+							 alternateButton:nil
+							 otherButton:nil
+							 informativeTextWithFormat:
+							 @"Apologies -- there was an error when trying to tag this web page.\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+							 ] runModal];
+							[self terminateAppSafely];
+						}
+
 					}
 					
 					DDLogInfo(@"pathToWeblocFileToTag = %@", pathToWeblocFileToTag);
