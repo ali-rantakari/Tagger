@@ -55,9 +55,9 @@
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
 
 // name of the folder where we save .webloc files we create
-// for tagging Safari bookmarks (under our own Application
+// for tagging web pages (this is under our own Application
 // support folder)
-#define SAFARI_BOOKMARKS_FOLDER_NAME @"Safari-Bookmarks"
+#define WEBLOCS_FOLDER_NAME @"Web Links"
 
 #define GET_SELECTED_FINDER_ITEMS_APPLESCRIPT	\
 	@"tell application \"Finder\"\n\
@@ -81,14 +81,40 @@
 	end tell"
 
 #define GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT \
-	@"tell application \"Safari\" to return name of front window"
+	@"tell application \"Safari\"\n\
+		if front document exists\n\
+			return name of front document\n\
+		else\n\
+			return \"\"\n\
+		end if\n\
+	end tell"
 #define GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT \
-	@"tell application \"Safari\" to return URL of front document"
+	@"tell application \"Safari\"\n\
+		if front document exists\n\
+			return URL of front document\n\
+		else\n\
+			return \"\"\n\
+		end if\n\
+	end tell"
 
 #define GET_CURRENT_FIREFOX_PAGE_TITLE_APPLESCRIPT \
-	@"tell application \"Firefox\" to return item 2 of (properties of front window as list)"
+	@"tell application \"System Events\" to tell process \"Firefox\" to set ffWindowsExist to (front window) exists\n\
+	tell application \"Firefox\"\n\
+		if ffWindowsExist then\n\
+			return item 2 of (properties of front window as list)\n\
+		else\n\
+			return \"\"\n\
+		end if\n\
+	end tell"
 #define GET_CURRENT_FIREFOX_PAGE_URL_APPLESCRIPT \
-	@"tell application \"Firefox\" to return item 3 of (properties of front window as list)"
+	@"tell application \"System Events\" to tell process \"Firefox\" to set ffWindowsExist to (front window) exists\n\
+	tell application \"Firefox\"\n\
+		if ffWindowsExist then\n\
+			return item 3 of (properties of front window as list)\n\
+		else\n\
+			return \"\"\n\
+		end if\n\
+	end tell"
 
 #define GET_CURRENT_OPERA_PAGE_TITLE_APPLESCRIPT \
 	@"tell application \"Opera\" to return item 2 of (GetWindowInfo of window 1)"
@@ -96,9 +122,21 @@
 	@"tell application \"Opera\" to return item 1 of (GetWindowInfo of window 1)"
 
 #define GET_CURRENT_CAMINO_PAGE_TITLE_APPLESCRIPT \
-	@"tell application \"Camino\" to return name of front window"
+	@"tell application \"Camino\"\n\
+		if front browser window exists\n\
+			return name of front browser window\n\
+		else\n\
+			return \"\"\n\
+		end if\n\
+	end tell"
 #define GET_CURRENT_CAMINO_PAGE_URL_APPLESCRIPT \
-	@"tell application \"Camino\" to return URL of current tab of front window"
+	@"tell application \"Camino\"\n\
+		if front browser window exists\n\
+			return URL of current tab of front browser window\n\
+		else\n\
+			return \"\"\n\
+		end if\n\
+	end tell"
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
 \n\
@@ -217,7 +255,7 @@ static NSString* frontAppBundleID = nil;
 									 stringByAppendingPathComponent:[[NSProcessInfo processInfo]
 																	 processName]
 									 ];
-	self.weblocFilesFolderPath = [appSupportDirectory stringByAppendingPathComponent:SAFARI_BOOKMARKS_FOLDER_NAME];
+	self.weblocFilesFolderPath = [appSupportDirectory stringByAppendingPathComponent:WEBLOCS_FOLDER_NAME];
 	
 	DDLogInfo(@"self.weblocFilesFolderPath = %@", self.weblocFilesFolderPath);
 	
@@ -828,7 +866,7 @@ doCommandBySelector:(SEL)command
 				
 				NSString *errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org";
 				if ([frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID])
-					errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nNote that Firefox has had bugs related to AppleScript that might be causing this problem -- the workaround is to restart Firefox and try again. If this doesn't help, you can send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org";
+					errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nNOTE: Firefox has had bugs related to AppleScript that might be causing this problem -- known workarounds are to make sure that the frontmost window is a regular browser window and if that doesn't help, to restart Firefox and try again. You can send a bug report to the author at the following web page (and remember to attach your system log with the message) but this is probably a bug in Firefox, not Tagger.\n\nhttp://hasseg.org";
 				[[NSAlert
 				 alertWithMessageText:@"Error tagging web page"
 				 defaultButton:@"Quit"
