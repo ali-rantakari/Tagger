@@ -22,6 +22,10 @@
 
 // TODO:
 // 
+// - How to deal with tagging web pages at different URLs that
+//   have the same title? Right now the same .webloc file will simply
+//   be used for both.
+// 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
 // 
 // - Make the token field colors more pleasant
