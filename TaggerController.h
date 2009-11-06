@@ -71,6 +71,9 @@
 
 - (void) addFileToTag:(NSString *)aFilePath;
 
+- (NSString *) getWeblocFilePathForTitle:(NSString *)title URL:(NSString *)url;
+
+
 - (IBAction) aboutSelected:(id)sender;
 - (IBAction) preferencesSelected:(id)sender;
 - (IBAction) okSelected:(id)sender;

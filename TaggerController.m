@@ -86,11 +86,6 @@
 	@"tell application \"Safari\"\n\
 		return URL of document 1\n\
 	end tell"
-#define CREATE_WEBLOC_FILE_APPLESCRIPT_FORMAT \
-	@"tell application \"Finder\"\n\
-		set wl to make new internet location file to \"%@\" at ((POSIX file \"%@\") as alias) with properties {name:\"%@\"}\n\
-		return (POSIX path of (wl as POSIX file))\n\
-	end tell"
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
 \n\
@@ -611,6 +606,39 @@ doCommandBySelector:(SEL)command
 }
 
 
+
+- (NSString *) getWeblocFilePathForTitle:(NSString *)title URL:(NSString *)url
+{
+	// create a new .webloc file into Tagger's application support folder
+	// (instead of the caches folder since we want these to persist and
+	// be backed up by Time Machine -- caches may be deleted at any time
+	// and they are not backed up.)
+	
+	// 'clean up' the page title a bit before using it as a file name
+	NSString *suggestedFilename = [title
+								   stringByReplacingOccurrencesOfString:@"/"
+								   withString:@"-"];
+	NSString *pathToWeblocFileToTag = [self.weblocFilesFolderPath
+										  stringByAppendingPathComponent:
+										  [suggestedFilename stringByAppendingString:@".webloc"]
+										  ];
+	
+	if ([[NSFileManager defaultManager] fileExistsAtPath:pathToWeblocFileToTag])
+		return pathToWeblocFileToTag;
+	
+	// create the .webloc file
+	NSDictionary *weblocContentsDict = [NSDictionary
+										dictionaryWithObject:url
+										forKey:@"URL"
+										];
+	[weblocContentsDict writeToFile:pathToWeblocFileToTag atomically:YES];
+	return pathToWeblocFileToTag;
+}
+
+
+
+
+
 // NSWindow delegate method: terminate app when window closes
 - (void) windowWillClose:(NSNotification *)notification
 {
@@ -714,7 +742,9 @@ doCommandBySelector:(SEL)command
 				 ] runModal];
 				[self terminateAppSafely];
 			}
-			else
+			else if (![[getPageTitleASOutput stringValue] hasPrefix:@"topsites://"] &&
+					 ![[getPageTitleASOutput stringValue] hasPrefix:@"about://"]
+					 )
 			{
 				self.titleArgument = [getPageTitleASOutput stringValue];
 				
@@ -740,99 +770,12 @@ doCommandBySelector:(SEL)command
 				}
 				else
 				{
-					// create a new .webloc file into Tagger's application support folder
-					// (instead of the caches folder since we want these to persist and
-					// be backed up by Time Machine -- caches may be deleted at any time
-					// and they are not backed up.)
-					
-					// try to 'clean up' the page title before using it as
-					// a file name
-					NSString *suggestedFilename = [self.titleArgument
-												   stringByReplacingOccurrencesOfString:@"/"
-												   withString:@"-"];
-					NSString *suggestedFilepathWithExt = [self.weblocFilesFolderPath
-														  stringByAppendingPathComponent:
-														  [suggestedFilename stringByAppendingString:@".webloc"]
-														  ];
-					
-					DDLogInfo(@"suggestedFilename = %@", suggestedFilename);
-					
-					NSString *pathToWeblocFileToTag = nil;
-					
-					if ([[NSFileManager defaultManager] fileExistsAtPath:suggestedFilepathWithExt])
-						pathToWeblocFileToTag = suggestedFilepathWithExt;
-					
-					if (pathToWeblocFileToTag == nil)
-					{
-						NSString *tempWeblocFileName = @"tempWeblocFile";
-						NSString *createWeblocASSource = [NSString
-														  stringWithFormat:
-														  CREATE_WEBLOC_FILE_APPLESCRIPT_FORMAT,
-														  [getPageURLASOutput stringValue],
-														  self.weblocFilesFolderPath,
-														  tempWeblocFileName
-														  ];
-						NSAppleScript *createWeblocAS = [[NSAppleScript alloc] initWithSource:createWeblocASSource];
-						NSAppleEventDescriptor *createWeblocASOutput = [createWeblocAS executeAndReturnError:&appleScriptError];
-						[createWeblocAS release];
-						
-						if ([createWeblocASOutput stringValue] != nil)
-						{
-							// [createWeblocASOutput stringValue] contains the actual
-							// filename for the .webloc file that Finder created. We'll
-							// just rename it to the name we want it to be.
-							DDLogInfo(@"[createWeblocASOutput stringValue] = %@", [createWeblocASOutput stringValue]);
-							
-							NSError *moveError = nil;
-							BOOL moveSuccess = [[NSFileManager defaultManager]
-												moveItemAtPath:[self.weblocFilesFolderPath stringByAppendingPathComponent:[createWeblocASOutput stringValue]]
-												toPath:suggestedFilepathWithExt
-												error:&moveError
+					NSString *weblocFilePath = [self
+												getWeblocFilePathForTitle:self.titleArgument
+												URL:[getPageURLASOutput stringValue]
 												];
-							if (moveSuccess)
-							{
-								pathToWeblocFileToTag = suggestedFilepathWithExt;
-							}
-							else
-							{
-								NSLog(@"ERROR: could not rename temporary .webloc file (%@): %@",
-									  [createWeblocASOutput stringValue], [moveError localizedDescription]
-									  );
-								[[NSAlert
-								  alertWithMessageText:@"Error tagging web page"
-								  defaultButton:@"Quit"
-								  alternateButton:nil
-								  otherButton:nil
-								  informativeTextWithFormat:
-								  @"Apologies -- there was an error when trying to tag this web page (could not rename temporary .webloc file).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
-								  ] runModal];
-								[self terminateAppSafely];
-							}
-						}
-						else
-						{
-							NSLog(@"ERROR: Could not get create .webloc file.");
-							NSLog(@"  suggestedFilename = %@", suggestedFilename);
-							if (appleScriptError != nil)
-								NSLog(@" AS error: %@", appleScriptError);
-							[[NSAlert
-							 alertWithMessageText:@"Error tagging web page"
-							 defaultButton:@"Quit"
-							 alternateButton:nil
-							 otherButton:nil
-							 informativeTextWithFormat:
-							 @"Apologies -- there was an error when trying to tag this web page.\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
-							 ] runModal];
-							[self terminateAppSafely];
-						}
-
-					}
-					
-					DDLogInfo(@"pathToWeblocFileToTag = %@", pathToWeblocFileToTag);
-					if (pathToWeblocFileToTag != nil)
-					{
-						[self addFileToTag:pathToWeblocFileToTag];
-					}
+					if (weblocFilePath != nil)
+						[self addFileToTag:weblocFilePath];
 				}
 			}
 		}
