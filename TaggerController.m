@@ -34,8 +34,6 @@
 
 // BUGS TO FIX:
 // 
-// - browsers' "downloads" windows causing trouble (any other
-//   secondary browser windows that we need to ignore?)
 
 
 #import "TaggerController.h"
@@ -54,9 +52,8 @@
 #define OPERA_BUNDLE_ID			@"com.operasoftware.Opera"
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
 
-// name of the folder where we save .webloc files we create
-// for tagging web pages (this is under our own Application
-// support folder)
+// name of the folder where we save the .webloc files
+// that we create for tagging web pages
 #define WEBLOCS_FOLDER_NAME @"Web Links"
 
 #define GET_SELECTED_FINDER_ITEMS_APPLESCRIPT	\
@@ -247,15 +244,18 @@ static NSString* frontAppBundleID = nil;
 	}
 	
 	
-	// create self.weblocFilesFolderPath if it doesn't exist
-	NSString *appSupportDirectory = [[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,
-																		  NSUserDomainMask,
-																		  YES
-																		  ) objectAtIndex:0] 
-									 stringByAppendingPathComponent:[[NSProcessInfo processInfo]
-																	 processName]
-									 ];
-	self.weblocFilesFolderPath = [appSupportDirectory stringByAppendingPathComponent:WEBLOCS_FOLDER_NAME];
+	// We'll use ~/Library/Metadata/ instead of ~/Library/Caches/Metadata
+	// because we want the .webloc files we create to persist and be backed
+	// up by Time Machine. Both of these paths are indexed by Spotlight,
+	// though: http://support.apple.com/kb/TA23187
+	// 
+	NSString *userLibraryDir = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
+																	NSUserDomainMask,
+																	YES
+																	) objectAtIndex:0];
+	NSString *userMetadataDir = [userLibraryDir stringByAppendingPathComponent:@"Metadata"];
+	NSString *myMetadataDir = [userMetadataDir stringByAppendingPathComponent:[[NSProcessInfo processInfo] processName]];
+	self.weblocFilesFolderPath = [myMetadataDir stringByAppendingPathComponent:WEBLOCS_FOLDER_NAME];
 	
 	DDLogInfo(@"self.weblocFilesFolderPath = %@", self.weblocFilesFolderPath);
 	
@@ -664,11 +664,6 @@ doCommandBySelector:(SEL)command
 - (NSString *) getWeblocFilePathForTitle:(NSString *)title
 									 URL:(NSString *)url
 {
-	// create a new .webloc file into Tagger's application support folder
-	// (instead of the caches folder since we want these to persist and
-	// be backed up by Time Machine -- caches may be deleted at any time
-	// and they are not backed up.)
-	
 	// remove the anchor part of the URL (we want to consider only
 	// 'full' pages, not parts thereof)
 	NSRange hashRange = [url rangeOfString:@"#" options:NSBackwardsSearch];
