@@ -29,7 +29,7 @@
         keywordable files is to write the tags somewhere else (eg sidecar files). 
         
         The other solution is the tact taken by Open Meta. 
-        Keywords are written to their own tag, which is indexed by Spotlight, (kOMUserTags). These tags are independent of kMDItemkeywords. 
+        Keywords are written to their own tag, which is indexed by Spotlight, (kMDItemOMUserTags). These tags are independent of kMDItemkeywords. 
         They can be written in the exact same very simple manner to each and every file on the file system. They do not hide the keywords set on the file. 
         Since they are stored in xattrs, they can easily be included or excluded from a file, when that file is for instance shipped off to a third party. 
         This is useful in order to keep metadata 'in house'. BUT - the data set by OpenMeta is not 'in the file' the same 
@@ -55,7 +55,7 @@
         What about namespaces?
         **********************
         Open Meta is a clean simple way to set user entered searchable metadata on any file on Mac OS X. Concepts like namespaces are not encouraged, as 
-        most users have no idea what a namespace is. The tradeoff is a small amount of _understandable_ ambiguity - searching for Tags:apple (i.e. kOMUserTags == "apple"cd) will find
+        most users have no idea what a namespace is. The tradeoff is a small amount of _understandable_ ambiguity - searching for Tags:apple (i.e. kMDItemOMUserTags == "apple"cd) will find
         all files having to do with both the fruit one can eat, and the company that makes computers. Users expect this. With namespaces an improperly constructed query
         will usually result in 'no matches'. 
         
@@ -79,11 +79,12 @@
             /System/Library/Frameworks/CoreServices.framework/Frameworks/Metadata.framework/Resources/schema.xml
     -->
     <attributes>
-        <attribute name="kOMUserTags" multivalued="true" type="CFString"/>
-        <attribute name="kOMUserTagTime" type="CFDate"/>
-        <attribute name="kOMDocumentDate" type="CFDate"/>
-        <attribute name="kOMBookmarks" multivalued="true" type="CFString"/>
-        <attribute name="kOMUserTagApplication" type="CFString"/>
+        <attribute name="kMDItemOMUserTags" multivalued="true" type="CFString"/>
+        <attribute name="kMDItemOMUserTagTime" type="CFDate"/>
+        <attribute name="kMDItemOMDocumentDate" type="CFDate"/>
+        <attribute name="kMDItemOMBookmarks" multivalued="true" type="CFString"/>
+        <attribute name="kMDItemOMUserTagApplication" type="CFString"/>
+        <attribute name="kMDItemOMManaged" type="CFBoolean"/>
    </attributes>
 
     <types>
@@ -92,19 +93,21 @@
             <!-- 'allattrs' is a whitespace separated list of all of the attributes that this UTI type normally has.
                  It does not have to be exhaustive. -->
             <allattrs> 
-			kOMUserTags
-			kOMUserTagTime
-			kOMDocumentDate
-			kOMBookmarks
-			kOMUserTagApplication
+			kMDItemOMUserTags
+			kMDItemOMUserTagTime
+			kMDItemOMDocumentDate
+			kMDItemOMBookmarks
+			kMDItemOMUserTagApplication
+			kMDItemOMManaged
             </allattrs>
             <!-- 'displayattrs' is a whitespace separated list of the attributes that should normally be displayed when previewing files of this UTI type. -->
             <displayattrs>
-			kOMUserTags
-			kOMUserTagTime
-			kOMDocumentDate
-			kOMBookmarks
-			kOMUserTagApplication
+			kMDItemOMUserTags
+			kMDItemOMUserTagTime
+			kMDItemOMDocumentDate
+			kMDItemOMBookmarks
+			kMDItemOMUserTagApplication
+			kMDItemOMManaged
             </displayattrs>
             
         </type>
