@@ -14,12 +14,7 @@ VERSIONCHANGELOGFILELOC="$(TEMP_DEPLOYMENT_DIR)/changelog.html"
 GENERALCHANGELOGFILELOC="changelog.html"
 SCP_TARGET=$(shell cat ./deploymentScpTarget)
 
-DEPLOYMENTFILES=$(shell OUTPUT="";\
-for FILE in "deployment-files/"*;\
-do\
-	OUTPUT="$$OUTPUT\\\"$$FILE\\\" ";\
-done;\
-echo "$$OUTPUT";)
+DEPLOYMENT_INCLUDES_DIR="deployment-files"
 
 
 
@@ -40,8 +35,8 @@ release:
 	
 # create zip archive
 	mkdir -p $(TEMP_DEPLOYMENT_DIR)
-	echo "-j $(TEMP_DEPLOYMENT_ZIPFILE) $(DEPLOYMENTFILES)" | xargs zip
 	cd "./build/Release/"; echo "-g -r ../../$(TEMP_DEPLOYMENT_ZIPFILE) \"Tagger.app\"" | xargs zip
+	cd "$(DEPLOYMENT_INCLUDES_DIR)"; echo "-g -R ../$(TEMP_DEPLOYMENT_ZIPFILE) *" | xargs zip
 	
 # if changelog doesn't already exist in the deployment dir
 # for this version, get 'general' changelog file from root if
