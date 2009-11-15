@@ -22,7 +22,6 @@
 
 // TODO:
 // 
-// - Make sure .webloc filenames don't start with a dot
 // - Deal with web page titles that are empty after sanitizing
 // - Add OmniWeb support
 // 
@@ -682,6 +681,10 @@ doCommandBySelector:(SEL)command
 	NSString *primaryFilename = [title
 								 stringByReplacingOccurrencesOfString:@"/"
 								 withString:@"-"];
+	while ([primaryFilename hasPrefix:@"."])
+	{
+		primaryFilename = [primaryFilename substringFromIndex:1];
+	}
 	NSString *primaryPath = [self.weblocFilesFolderPath
 							 stringByAppendingPathComponent:
 							 [primaryFilename stringByAppendingString:@".webloc"]
