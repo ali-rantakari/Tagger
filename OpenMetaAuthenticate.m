@@ -60,7 +60,10 @@ NSString* const OM_CantSetMetadataErrorString = @"OpenMeta can't set the meta da
 #else
 	// if we are on the main thread (is the main thread a real requirement - docs not clear?) and the user has not recently pressed cancel
 	// then allow the auth to ask for user interaction
-	if ([NSThread isMainThread] && (CFAbsoluteTimeGetCurrent() > dontAskForUserInteractionAgainUntil))
+// I used to check for the main thread here before allowing user interaction. The docs however do not warn against that, and also it seems to work. Tested on threaded nsoperation.
+//	if ([NSThread isMainThread] && (CFAbsoluteTimeGetCurrent() > dontAskForUserInteractionAgainUntil))
+//		flags += kAuthorizationFlagInteractionAllowed;
+	if ((CFAbsoluteTimeGetCurrent() > dontAskForUserInteractionAgainUntil))
 		flags += kAuthorizationFlagInteractionAllowed;
 #endif
 	// create an authItem for the passed prompt.
@@ -103,7 +106,7 @@ NSString* const OM_CantSetMetadataErrorString = @"OpenMeta can't set the meta da
 	if ([inKeyName length] == 0 || [path length] == 0)
 		return [NSError errorWithDomain:@"openmeta" code:OM_CantSetMetadataError userInfo:[NSDictionary dictionaryWithObject:OM_CantSetMetadataErrorString forKey:@"info"]];
 	
-	AuthorizationRef authRef = [self getAuthenticationPossiblyUsingUI:NSLocalizedString(@"You need to authorize to set metadata like tags on some files.\n", @"")];
+	AuthorizationRef authRef = [self getAuthenticationPossiblyUsingUI:NSLocalizedString(@"You need to authorize to set metadata like tags on some files.", @"")];
 	if (authRef == nil)
 		return [NSError errorWithDomain:@"openmeta" code:OM_CantSetMetadataError userInfo:[NSDictionary dictionaryWithObject:OM_CantSetMetadataErrorString forKey:@"info"]];
 	
@@ -121,7 +124,6 @@ NSString* const OM_CantSetMetadataErrorString = @"OpenMeta can't set the meta da
 		if (errorString)
 		{
 			[errorString autorelease];
-			[dataToSendNS release];
 			dataToSendNS = nil;
 		}
 		

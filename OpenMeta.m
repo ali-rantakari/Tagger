@@ -44,13 +44,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 const long kMaxDataSize = 4096; // Limit maximum data that can be stored, 
 
-NSString* const kOMUserTags = @"kOMUserTags";
-NSString* const kOMUserTagTime = @"kOMUserTagTime";
-NSString* const kOMDocumentDate = @"kOMDocumentDate";
-NSString* const kOMBookmarks = @"kOMBookmarks";
-NSString* const kOMUserTagApplication = @"kOMUserTagApplication";
+NSString* const kMDItemOMUserTags = @"kMDItemOMUserTags";
+NSString* const kMDItemOMUserTagTime = @"kMDItemOMUserTagTime";
+NSString* const kMDItemOMDocumentDate = @"kMDItemOMDocumentDate";
+NSString* const kMDItemOMBookmarks = @"kMDItemOMBookmarks";
+NSString* const kMDItemOMUserTagApplication = @"kMDItemOMUserTagApplication";
 
-const double kOMMaxRating = 5.0;
+const double kMDItemOMMaxRating = 5.0;
 
 
 NSString* const OM_ParamErrorString = @"Open Meta parameter error";
@@ -89,8 +89,16 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 	
 	tags = [self removeDuplicateTags:tags]; // also converts to utf8 decomposed format
 	
-	[self setXAttrMetaData:[NSDate date] metaDataKey:kOMUserTagTime path:path];
-	return [self setNSArrayMetaData:tags metaDataKey:kOMUserTags path:path]; 
+	[self setXAttrMetaData:[NSDate date] metaDataKey:kMDItemOMUserTagTime path:path];
+
+	// backward compatibility kOM
+	// for backward compatibility with older openmeta, also set the user tags under kOMUserTags.
+	// the problem with the old name is that they erased by many common file operations in 10.6. 
+	// the new prefix, kMDItemOM* will get preserved 
+	[self setXAttr:tags forKey:[self spotlightKey:@"kOMUserTags"] path:path];
+	[self setXAttr:tags forKey:[self openmetaKey:@"kOMUserTags"] path:path];
+
+	return [self setNSArrayMetaData:tags metaDataKey:kMDItemOMUserTags path:path]; 
 }
 
 //----------------------------------------------------------------------
@@ -112,7 +120,7 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 
 	// we need to be careful to be case insensitive case preserving here:
 	NSError* error = nil;
-	NSArray* originalTags = [self getNSArrayMetaData:kOMUserTags path:path error:&error];
+	NSArray* originalTags = [self getNSArrayMetaData:kMDItemOMUserTags path:path error:&error];
 	if (error)
 		return error;
 		
@@ -161,7 +169,7 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 
 	// we need to be careful to be case insensitive case preserving here:
 	NSError* error = nil;
-	NSArray* originalTags = [self getNSArrayMetaData:kOMUserTags path:path error:&error];
+	NSArray* originalTags = [self getNSArrayMetaData:kMDItemOMUserTags path:path error:&error];
 	if (error)
 		return error;
 	
@@ -192,15 +200,18 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 //----------------------------------------------------------------------
 +(NSArray*)getUserTags:(NSString*)path error:(NSError**)error;
 {
+	// if there are tags set by both old and new api, then this uses dates to figure out which to use. 
+	[OpenMetaBackup copyTagsFromOldKeyTokMDItemOMIfNeeded:path];
+	
 	// I put restore meta here - as restoreMetadata calls us! 
 	// I put the restore on the usertags and ratings. Users will have to manually call restore for other keys 
 	[OpenMetaBackup restoreMetadata:path];
-	return [self getNSArrayMetaData:kOMUserTags path:path error:error];
+	return [self getNSArrayMetaData:kMDItemOMUserTags path:path error:error];
 }
 
 +(NSArray*)getUserTagsNoRestore:(NSString*)path error:(NSError**)error;
 {
-	return [self getNSArrayMetaData:kOMUserTags path:path error:error];
+	return [self getNSArrayMetaData:kMDItemOMUserTags path:path error:error];
 }
 
 
@@ -221,8 +232,8 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 	if (rating05 <= 0.0)
 		return [self setXAttrMetaData:nil metaDataKey:(NSString*)kMDItemStarRating path:path];
 	
-	if (rating05 > kOMMaxRating)
-		rating05 = kOMMaxRating;
+	if (rating05 > kMDItemOMMaxRating)
+		rating05 = kMDItemOMMaxRating;
 		
 	NSNumber* ratingNS = [NSNumber numberWithDouble:rating05];
 	return [self setXAttrMetaData:ratingNS metaDataKey:(NSString*)kMDItemStarRating path:path];
@@ -251,8 +262,7 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 //----------------------------------------------------------------------
 +(NSError*)setString:(NSString*)string keyName:(NSString*)keyName path:(NSString*)path;
 {
-	NSError*	theErr = [self setXAttrMetaData:string metaDataKey:keyName path:path];
-	return theErr;
+	return [self setXAttrMetaData:string metaDataKey:keyName path:path];
 }
 
 +(NSString*)getString:(NSString*)keyName path:(NSString*)path error:(NSError**)error;
@@ -260,73 +270,6 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 	return [self getXAttrMetaData:keyName path:path error:error];
 }
 
-//----------------------------------------------------------------------
-//	setDictionaries
-//
-//	Purpose:	
-//
-//	Inputs:		array of dictionaries. Two attributes will be set. One, a spotlight searchable array 
-//				composed of @"name" fields found in the array, plus the entire array as passed in, which is stored in an 
-//				xattr that will not be indexed by spotlight.
-//				
-//
-//	Outputs:	
-//
-//  Created by Tom Andersen on 2008/07/17 
-//
-//----------------------------------------------------------------------
-+(NSError*)setDictionaries:(NSArray*)arrayOfDicts keyName:(NSString*)keyName path:(NSString*)path;
-{
-	NSMutableArray* spotlightArray = [NSMutableArray array];
-	BOOL needAllDictsSet = NO;
-	for (NSDictionary* aDict in arrayOfDicts)
-	{
-		id name = [aDict objectForKey:@"name"]; // name can be string, nsdate, nsnumber
-		if (name)
-		{
-			[spotlightArray addObject:name];
-			if ([aDict count] > 1)
-				needAllDictsSet = YES;
-		}
-		else
-		{
-			needAllDictsSet = YES;
-		}
-	}
-	
-	// the searchable thing is optional if the spotlightArray is empty this will erase for that key too.
-	// set as array - to set single
-	NSError* theErr = [self setXAttrMetaData:spotlightArray metaDataKey:keyName path:path];
-		
-	// set all the data to the passed key - but only set if there are other keys:
-	if (theErr == nil && needAllDictsSet)
-		theErr = [self setXAttr:arrayOfDicts forKey:keyName path:path];
-	
-	return theErr;
-}
-
-//----------------------------------------------------------------------
-//	getDictionaries
-//
-//	Purpose:	returns dicts as were passed into setDictionaries. 
-//				if you only want the names then you can call getDictionariesNames
-//
-//	Inputs:		
-//
-//	Outputs:	
-//
-//  Created by Tom Andersen on 2008/07/17 
-//
-//----------------------------------------------------------------------
-+(NSArray*)getDictionaries:(NSString*)keyName path:(NSString*)path error:(NSError**)error;
-{
-	return [self getXAttr:keyName path:path error:error];
-}
-
-+(NSArray*)getDictionariesNames:(NSString*)keyName path:(NSString*)path error:(NSError**)error;
-{
-	return [self getXAttrMetaData:keyName path:path error:error];
-}
 
 #pragma mark getting/setting on multiple files 
 
@@ -348,6 +291,11 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 	// order is to 'be preserved' - but for multiple documents - we use the first passed doc
 	if ([paths count] == 1)
 		return [self getUserTags:[paths lastObject] error:error];
+	
+	
+	// make sure that any tags that are set with the old api get copied into the new fold:
+	for (NSString* aPath in paths)
+		[OpenMetaBackup copyTagsFromOldKeyTokMDItemOMIfNeeded:aPath];
 	
 	
 	// restore metadata to all files:
@@ -554,7 +502,11 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 	// and if that fails, to look to the mirror data. But if someone sets a tag using an OpenMeta app.
 	// then removes it with another, possibly old openmeta app, or some other application that uses 
 	// its own method to call setxattr() directly, the mirrored tags will be old and wrong.
-	// So it seems that we would only want to restore from the mirrored tags with a rewrite of how open meta works,
+	// what to do?
+}
++(id)getXAttrMetaDataNoSpotlightMirror:(NSString*)omKey path:(NSString*)path error:(NSError**)error;
+{
+	return [self getXAttr:[self openmetaKey:omKey] path:path error:error];
 }
 
 //----------------------------------------------------------------------
@@ -569,13 +521,20 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 //  Created by Tom Andersen on 2008/12/10 
 //
 //----------------------------------------------------------------------
++(NSError*)setXAttrNoSpotlightMirror:(id)plistObject omKey:(NSString*)omKey path:(NSString*)path;
+{
+	// Mirroring: mirror all data to our own open meta domain name
+	[self setXAttr:plistObject forKey:[self openmetaKey:omKey] path:path];
+	
+	// set a time stamp (not in spotlight DB) for this operation
+	NSError* error = [self setXAttr:[NSDate date] forKey:[self openmetaTimeKey:omKey] path:path];
+	return error;
+}
+
 +(NSError*)setXAttrMetaData:(id)plistObject metaDataKey:(NSString*)metaDataKey path:(NSString*)path;
 {
 	// Mirroring: mirror all data to our own open meta domain name
-	[self setXAttr:plistObject forKey:[self openmetaKey:metaDataKey] path:path];
-	
-	// set a time stamp (not in spotlight DB) for this operation
-	[self setXAttr:[NSDate date] forKey:[self openmetaTimeKey:metaDataKey] path:path];
+	[self setXAttrNoSpotlightMirror:plistObject omKey:metaDataKey path:path];
 	
 	NSError* error = [self setXAttr:plistObject forKey:[self spotlightKey:metaDataKey] path:path];
 	
@@ -618,13 +577,18 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 +(void)registerUsualOMAttributes;
 {
 	NSDictionary* stuffWeUse = [NSDictionary dictionaryWithObjectsAndKeys:
-								[NSArray arrayWithObjects:@"openMeta1", @"openMeta2", nil], @"kOMUserTags",
-								[NSDate date], @"kOMUserTagTime",
-								[NSDate date], @"kOMDocumentDate",
-								[NSArray arrayWithObjects:@"bookmark1", @"bookmark2", nil], @"kOMBookmarks",
+								[NSArray arrayWithObjects:@"openMeta1", @"openMeta2", nil], @"kMDItemOMUserTags",
+								[NSDate date], @"kMDItemOMUserTagTime",
+								[NSDate date], @"kMDItemOMDocumentDate",
+								[NSNumber numberWithBool:YES], @"kMDItemOMManaged",
+								[NSArray arrayWithObjects:@"bookmark1", @"bookmark2", nil], @"kMDItemOMBookmarks",
 								nil];
 
-	[OpenMeta registerOMAttributes:stuffWeUse forAppName:@"openMeta"];
+	
+	// App name: 
+	NSString* appname = [[[NSBundle mainBundle] bundlePath] lastPathComponent];
+	
+	[OpenMeta registerOMAttributes:stuffWeUse forAppName:appname];
 }
 
 //----------------------------------------------------------------------
@@ -633,12 +597,12 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 //				Easiest to ususally call registerUsualOMAttributes
 //
 //	Purpose:	This should be called by any application that uses OpenMeta, to register the attributes that you are using with spotlight.
-//				Spotlight may not 'know' about say kOMUserTags unless you set a file with some user tags so that the OpenMeta spotlight importer can
+//				Spotlight may not 'know' about say kMDItemOMUserTags unless you set a file with some user tags so that the OpenMeta spotlight importer can
 //				run on this one (fairly hidden file), which then tells spotlight to look up and use all the relevant 'stuff':
 //
-//				For the kOMUserTags example:
-//				kOMUserTags is an array of nsstrings. So create one, tags = [NSArray arrayWithObjects:@"foo", @"bar"], and make a dictionary entry for it:
-//				[myAttributeDict setObject:tags forKey:@"kOMUserTags"];
+//				For the kMDItemOMUserTags example:
+//				kMDItemOMUserTags is an array of nsstrings. So create one, tags = [NSArray arrayWithObjects:@"foo", @"bar"], and make a dictionary entry for it:
+//				[myAttributeDict setObject:tags forKey:@"kMDItemOMUserTags"];
 //		
 //				Then add other attributes that your app uses:
 //				[myAttributeDict setObject:[NSNumber numberWithFloat:2] forKey:(NSString*)kMDItemStarRating];
@@ -793,7 +757,6 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 		if (errorString)
 		{
 			[errorString autorelease];
-			[dataToSendNS release];
 			dataToSendNS = nil;
 			return [NSError errorWithDomain:@"openmeta" code:OM_NoDataFromPropertyListError userInfo:[NSDictionary dictionaryWithObject:errorString forKey:@"info"]];
 		}
@@ -813,7 +776,7 @@ NSString* const OM_MetaTooBigErrorString = @"Meta data is too big - size as bina
 		returnVal = removexattr(pathUTF8, inKeyNameC, XATTR_NOFOLLOW);
 	}
 	
-	// only backup kOM - open meta stuff. 
+	// only backup kMDItemOM - open meta stuff. 
 	if (returnVal == 0)
 	{
 		if ([OpenMetaBackup attributeKeyMeansBackup:inKeyName])

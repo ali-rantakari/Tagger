@@ -13,6 +13,12 @@
 #import "OpenMeta.h"
 #import "OpenMetaBackup.h"
 
+NSString* OpenMetaBackupSingleFileDoneNote = @"OpenMetaBackupSingleFileDoneNote";
+
+NSString* kBackupPath = @"~/Library/Application Support/OpenMeta/backups"; // i guess this should be some messy cocoa special folder lookup for application support
+
+BOOL gDoOpenMetaBackups = YES; // mechanism for shutting down backups - place txt file at ~/Library/Application Support/OpenMeta/backups/No Backups Please.txt"
+
 @interface OpenMetaBackup (Private)
 +(NSString*)fsRefToPath:(FSRef*)inRef;
 +(NSData*)aliasDataForFSRef:(FSRef*)inRef;
@@ -26,11 +32,13 @@
 +(void)enqueueBackupItem:(NSString*)inPath;
 +(NSString*)truncatedPathComponent:(NSString*)aPathComponent;
 +(void)backupMetadataNow:(NSString*)inPath;
-+(void)restoreMetadataDict:(NSDictionary*)buDict toFile:(NSString*)inFile;
++(int)restoreMetadataDict:(NSDictionary*)buDict toFile:(NSString*)inFile;
 +(BOOL)backupThreadIsBusy;
 +(BOOL)openMetaThreadIsBusy;
 +(NSDate*)modDateOfFile:(NSString*)inPath;
 +(NSDate*)creationDateOfFile:(NSString*)inPath;
++(void)singleFileQueueIsBusyError;
++(NSDictionary*)openMetaDictForPath:(NSString*)inPath;
 @end
 
 @implementation OpenMetaBackup
@@ -44,7 +52,7 @@
 //					When tags, etc are about to be set on a document and the document has no openmeta data set on it, we check to make sure that it is actually an empty doc, 
 //					and not some doc that has had the metadata stripped away. 
 //
-//					Currently, any setting of an kOM* key will cause a backup to happen. Restore is attempted for Tags and ratings only - if you need to restore, then you have to call it yourself,
+//					Currently, any setting of an kMDItemOM* key will cause a backup to happen. Restore is attempted for Tags and ratings only - if you need to restore, then you have to call it yourself,
 //					which is easy.
 //	
 //
@@ -63,7 +71,7 @@
 //				can be called many times in a row, will coalesce backup requests into one write
 //	
 //
-//	Inputs:		
+//	Inputs:		gDoOpenMetaBackups
 //
 //	Outputs:	
 //
@@ -72,6 +80,9 @@
 //----------------------------------------------------------------------
 +(void)backupMetadata:(NSString*)inPath;
 {
+	if (!gDoOpenMetaBackups)
+		return;
+	
 	if ([inPath length] == 0)
 		return;
 	
@@ -82,20 +93,12 @@
 
 +(BOOL)hasTagsOrRatingsSet:(NSString*)inPath;
 {
-	NSArray* tags = [OpenMeta getXAttrMetaData:kOMUserTags path:inPath error:nil];
-	if (tags)
-		return YES;
-	
-	NSDate* tagTime = [OpenMeta getXAttrMetaData:kOMUserTagTime path:inPath error:nil];
-	if (tagTime)
-		return YES;
-	
-	NSNumber* theNumber = [OpenMeta getXAttrMetaData:(NSString*)kMDItemStarRating path:inPath error:nil];
-	if (theNumber)
-		return YES;
-	
-	// if the ratings have been set, then removed, there will still be a time stamp for this.
+	// if the ratings have been set OR removed, there will still be a time stamp for this.
 	if ([OpenMeta getXAttr:[OpenMeta openmetaTimeKey:(NSString*)kMDItemStarRating] path:inPath error:nil])
+		return YES;
+	
+	// if the tags have been set OR removed, there will still be a time stamp for this.
+	if ([OpenMeta getXAttr:[OpenMeta openmetaTimeKey:(NSString*)kMDItemOMUserTags] path:inPath error:nil])
 		return YES;
 	
 	return NO;
@@ -131,7 +134,83 @@
 	[self restoreMetadata:inPath withDelay:0.0];
 }
 
+#pragma mark upgrade to kMDItemOMUserTags 
+//----------------------------------------------------------------------
+//	upgradeOpenMetaTokMDItemOM (public call)
+//
+//	Purpose:	Allows old applications using kOMUserTags to work with applications that use the newer format.
+//				this should be run in any major app that uses open meta until about 2010, say Feb. After that only run 
+//				if user wants to run it? 
+//
+//	NOTE:		Only call once per running of the application
+//
+//  Created by Tom Andersen on 2009/10/08 
+//
+//----------------------------------------------------------------------
++(void)upgradeOpenMetaTokMDItemOM;
+{
+	static NSOperationQueue* operationQ = nil;
+	if (operationQ != nil)
+		return; // only call once
+		
+	operationQ = [[NSOperationQueue alloc] init];
+	OpenMetaUpgradeOperation* newOperation = [[[OpenMetaUpgradeOperation alloc] init] autorelease];
+	[operationQ addOperation:newOperation];
+}
 
+
+#pragma mark backup and restore to from single file
+NSOperationQueue* singleFileOperationQueue = nil;
++(NSOperationQueue*)singleFileQueue;
+{
+	if (singleFileOperationQueue == nil)
+		singleFileOperationQueue = [[NSOperationQueue alloc] init];
+	
+	return singleFileOperationQueue;
+}
+
+//----------------------------------------------------------------------
+//	backupAllMetadata (public call)
+//
+//	Purpose:	Make a single large backup file of all openmeta data. Data is obtained via a Spotlight Search on the passed keys.
+//				If the passed keys are empty or nil, then kMDItemOMUserTags, kMDItemStarRating and kMDItemOMManaged are backed up.
+//				This call is async. When the operation is done, a notification on the main thread will be sent out with a dictionary describing what happened.
+//
+//	Inputs:		
+//
+//	Outputs:	Note that all Openmeta data is backed up, not just the keys passed in. The passed in keys are for search only.
+//
+//  Created by Tom Andersen on 2009/01/26 
+//
+//----------------------------------------------------------------------
++(void)backupMetadataToSingleFile:(NSArray*)keysToSearch toFile:(NSString*)toFile;
+{
+	if ([[[self singleFileQueue] operations] count] > 0)
+	{
+		[self singleFileQueueIsBusyError];
+		return;
+	}
+	
+	OpenMetaBackupOperation* newOperation = [[[OpenMetaBackupOperation alloc] init] autorelease];
+	newOperation.keysToSearch = keysToSearch;
+	newOperation.singleFile = toFile;
+	newOperation.writeFile = YES;
+	[[self singleFileQueue] addOperation:newOperation];
+}
+
++(void)restoreMetadataFromSingleFile:(NSString*)inBackupFile;
+{
+	if ([[[self singleFileQueue] operations] count] > 0)
+	{
+		[self singleFileQueueIsBusyError];
+		return;
+	}
+	
+	OpenMetaBackupOperation* newOperation = [[[OpenMetaBackupOperation alloc] init] autorelease];
+	newOperation.singleFile = inBackupFile;
+	newOperation.writeFile = NO;
+	[[self singleFileQueue] addOperation:newOperation];
+}
 
 #pragma mark backup paths and stamps
 
@@ -179,8 +258,7 @@
 //+    NSString *libraryDir = [NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory,
 //                                                                  NSUserDomainMask,
 //                                                                  YES ) objectAtIndex:0];
-	NSString* backupPath = @"~/Library/Application Support/OpenMeta/backups"; // i guess this should be some messy cocoa special folder lookup for application support
-	backupPath = [backupPath stringByExpandingTildeInPath];
+	NSString* backupPath = [kBackupPath stringByExpandingTildeInPath];
 	
 	NSCalendarDate* todaysDate = [NSCalendarDate calendarDate];
 	
@@ -268,21 +346,39 @@
 BOOL gOMRestoreThreadBusy = NO;
 BOOL gOMIsTerminating = NO;
 
-//----------------------------------------------------------------------
-//	restoreMetadataFromBackupFileIfNeeded
-//
-//	Purpose:	restores kOM* data
-//
-//
-//  Created by Tom Andersen on 2009/01/28 
-//
-//----------------------------------------------------------------------
-+(int)restoreMetadataFromBackupFileIfNeeded:(NSString*)inPathToBUFile;
++(BOOL)backupDictsTheSame:(NSDictionary*)one two:(NSDictionary*)two;
 {
-	NSDictionary* backupContents = [NSDictionary dictionaryWithContentsOfFile:inPathToBUFile];
+	if ([one count] != [two count])
+		return NO;
+	
+	NSArray* keys = [one allKeys];
+	for (NSString* aKey in keys)
+	{
+		id obj1 = [one objectForKey:aKey];
+		id obj2 = [two objectForKey:aKey];
+		
+		// if both objects are dates, they will compare non equal, even though they both were spawned by the same date: the stored date in a backup file is only good to the second, I think that the binary plist gets more resolution?
+		if ([obj1 isKindOfClass:[NSDate class]] && [obj2 isKindOfClass:[NSDate class]])
+		{
+			// compare the dates
+			NSTimeInterval difference = [obj1 timeIntervalSinceDate:obj2];
+			if (fabs(difference) > 2.0)
+				return NO;
+		}
+		else 
+		{
+			if (![obj1 isEqual:obj2])
+				return NO;
+		}
+	}
+	return YES;
+}
+							
++(int)restoreMetadataFromBackupDictIfNeeded:(NSDictionary*)backupContents;
+{
 	if ([backupContents count] == 0)
 		return 0;
-	
+
 	NSString* filePath = [backupContents objectForKey:@"bu_path"];
 	if (![[NSFileManager defaultManager] fileExistsAtPath:filePath])
 	{
@@ -292,17 +388,40 @@ BOOL gOMIsTerminating = NO;
 			return 0; // could find no file to bu to.
 	}
 	
-	// if the file at the path has some sort of tags or ratings applied then that means we are ok. 
-	// I don't do date checks, etc as file may have had tags changed, etc with another computer on a network...
-	if ([self hasTagsOrRatingsSet:filePath])
+	// obtain the current state of affairs on the file by looking at a backup dict from the existing file:
+	NSDictionary* currentData = [OpenMetaBackup openMetaDictForPath:filePath];
+	NSDictionary* omDataFromBackup = [backupContents objectForKey:@"omDict"];
+	
+	if ([currentData count] == 0 && [omDataFromBackup count] == 0)
+		return 0; // no data anywhere
+	
+	if ([self backupDictsTheSame:currentData two:omDataFromBackup])
 		return 0;
-		
-	[self restoreMetadataDict:backupContents toFile:filePath];
+	
+	// there is a difference between what is on the file and the backup stuff passed in.
+	// it could be that the backup stuff is old, etc. So look at that. 
+	int numKeysSet = [self restoreMetadataDict:backupContents toFile:filePath];
 	
 #if KP_DEBUG
-	NSLog(@"meta data repaired on %@ with %@", filePath, backupContents);
+	if (numKeysSet > 0)
+		NSLog(@"meta data repaired on %@ with %@", filePath, backupContents);
 #endif
-	return 1; // one file fixed up
+	return numKeysSet;
+}
+
+//----------------------------------------------------------------------
+//	restoreMetadataFromBackupFileIfNeeded
+//
+//	Purpose:	restores kMDItemOM* data
+//
+//
+//  Created by Tom Andersen on 2009/01/28 
+//
+//----------------------------------------------------------------------
++(int)restoreMetadataFromBackupFileIfNeeded:(NSString*)inPathToBUFile;
+{
+	NSDictionary* backupContents = [NSDictionary dictionaryWithContentsOfFile:inPathToBUFile];
+	return [self restoreMetadataFromBackupDictIfNeeded:backupContents];
 }
 
 
@@ -388,6 +507,7 @@ BOOL gOMIsTerminating = NO;
 			
 			if (gOMIsTerminating)
 			{
+				[innerPool release];
 				[pool release];
 				gOMRestoreThreadBusy = NO;
 				return;
@@ -482,11 +602,134 @@ BOOL gOMIsTerminating = NO;
 	
 	return NO;
 }
+
+#pragma mark copy old kOM tags to new kMDItemOM tags  
+//----------------------------------------------------------------------
+//	copyTagsFromOldKeyTokMDItemOMIfNeeded
+//
+//	Purpose:	Oct 8, 2009 : if user has old and new api on the system, then they will sometimes enter keys using the old api. 
+//				before doing a get tags for editing type of event, 
+//
+//	Inputs:		THE DICT is NOT the entire file - just the actual backed up data - the omDict.
+//
+//	Outputs:	
+//
+//  Created by Tom Andersen on 2009/10/08 
+//
+//----------------------------------------------------------------------
++(void)copyTagsFromOldKeyTokMDItemOMIfNeeded:(NSString*)inPath;
+{
+	NSError* error = nil;
+	// if someone is using an older api, tags will be set with:
+	// org.openmetainfo:kOMUserTags [array of tags]
+	// org.openmetainfo.time:kOMUserTags [NSDate]
+	// With the new api, they will set tags like
+	// org.openmetainfo:kMDItemOMUserTags [array of tags]
+	// org.openmetainfo.time:kMDItemOMUserTags [NSDate]
+	
+	// we compare the two dates. If the kOMUserTagTime is newer than kMDItemOMUserTagTime, then we copy tags from kOMUserTags into kMDItemOMUserTags 
+	NSDate* thekOMDate = [OpenMeta getXAttr:@"org.openmetainfo.time:kOMUserTags" path:inPath error:&error];
+	NSDate* thekMDItemOMDate = [OpenMeta getXAttr:@"org.openmetainfo.time:kMDItemOMUserTags" path:inPath error:&error];
+	
+	if (thekOMDate == nil)
+		return; // there was no date information on the file. 
+	
+	// to compare dates they both need to be there:
+	if (thekOMDate == nil)
+		thekOMDate = [NSDate distantPast];
+	if (thekMDItemOMDate == nil)
+		thekMDItemOMDate = [NSDate distantPast];
+	
+	// can't use compare, as that is sub - second, and the dates in plists are not that accurate.
+	NSTimeInterval dateCompare = [thekOMDate timeIntervalSinceDate:thekMDItemOMDate]; 
+	// positive values indicate that the thekOMDate is later than the thekMDItemOMDate date, so we should use it.
+	// note that if the tags were wiped out by a cocoa nsdocument based save in 10.6, then the times will have been wiped away. 
+	// in that case, dateCompare should be <= 0, so we won't rewrite them.
+	if (dateCompare >= 2.0)
+	{
+		NSArray* thekOMTags = [OpenMeta getXAttr:@"org.openmetainfo:kOMUserTags" path:inPath error:&error];
+		NSArray* thekMDItemOMTags = [OpenMeta getXAttr:@"org.openmetainfo:kMDItemOMUserTags" path:inPath error:&error];
+		
+		// someone could have erased the tags using an older api, etc, so we should honour that kind of thing?
+		if (![thekOMTags isEqualToArray:thekMDItemOMTags])
+		{
+			// set the tags, 
+			// set user tags, 
+			[OpenMeta setXAttr:thekOMTags forKey:@"org.openmetainfo:kMDItemOMUserTags" path:inPath];
+			[OpenMeta setXAttr:thekOMTags forKey:@"com.apple.metadata:kMDItemOMUserTags" path:inPath];
+			[OpenMeta setXAttr:thekOMDate forKey:@"org.openmetainfo.time:kMDItemOMUserTags" path:inPath];
+		}
+	}
+}
+
 #pragma mark restoring metadata
 //----------------------------------------------------------------------
 //	restoreMetadataDict
 //
-//	Purpose:	
+//	Purpose:	Oct 8, 2009 : changing OpenMeta prefix to work with Snow Leopard bug
+//
+//	Inputs:		THE DICT is NOT the entire file - just the actual backed up data - the omDict.
+//
+//	Outputs:	
+//
+//  Created by Tom Andersen on 2009/10/08 
+//
+//----------------------------------------------------------------------
++(int)restoreOldMetadataKey:(NSString*)aKey fromDict:(NSDictionary*)omDict toFile:(NSString*)inFile;
+{
+	// the passed key is an 'old' kOM key. We only set 'new' format data, and only do that if there is no openmetainfo org stuff on the file.
+	// this keeps things simple.
+	id dataInBU = [omDict objectForKey:aKey];
+	if (dataInBU)
+	{
+		NSError* error = nil;
+		// only set data that is not already set - the idea of a backup is only replace if missing...
+		
+		// if there is new format data on disk then we are done. 
+		NSString* newKey = [aKey stringByReplacingOccurrencesOfString:@"org.openmetainfo:kOM" withString:@"org.openmetainfo:kMDItemOM"];
+		id data = [OpenMeta getXAttr:newKey path:inFile error:&error];
+		if (data)
+			return 0;
+		
+		NSString* newTimeKey = [newKey stringByReplacingOccurrencesOfString:@"org.openmetainfo:" withString:@"org.openmetainfo.time:"];
+		
+		// There was no org.openmetainfo on the file... what about com.apple.metadata?
+		NSString* newKeySpotlight = [aKey stringByReplacingOccurrencesOfString:@"org.openmetainfo:kOM" withString:@"com.apple.metadata:kMDItemOM"];
+		data = [OpenMeta getXAttr:newKeySpotlight path:inFile error:&error];
+		if (data)
+		{
+			// repair the data - but use the existing on disk data - it will likely be newer, and is likely from 10.6 save bug issue
+			[OpenMeta setXAttr:data forKey:newKey path:inFile];
+			// set the date as now:
+			[OpenMeta setXAttr:[NSDate date] forKey:newTimeKey path:inFile];
+			return 1;
+		}
+
+		// there was no data of any sort, so use what we have, but update the data:
+		NSString* oldTimeKey = [aKey stringByReplacingOccurrencesOfString:@"org.openmetainfo:" withString:@"org.openmetainfo.time:"];
+		NSDate* dateInBU = [omDict objectForKey:oldTimeKey];
+		BOOL writeDate = (dateInBU != nil);
+		
+		
+		NSString* oldAppleMetaDataKey = [aKey stringByReplacingOccurrencesOfString:@"org.openmetainfo:" withString:@"com.apple.metadata:"];
+		
+		[OpenMeta setXAttr:dataInBU forKey:newKey path:inFile];
+		
+		if ([omDict objectForKey:oldAppleMetaDataKey])
+			[OpenMeta setXAttr:dataInBU forKey:newKeySpotlight path:inFile];
+		// if the backup date is 'real' then write it too:
+		if (writeDate)
+			[OpenMeta setXAttr:dateInBU forKey:newTimeKey path:inFile];
+		
+		return 1;
+	}
+	return 0;
+}
+
+//----------------------------------------------------------------------
+//	restoreMetadataDict
+//
+//	Purpose:	Sep 1, 2009 : only restore open meta data
 //
 //	Inputs:		
 //
@@ -495,23 +738,77 @@ BOOL gOMIsTerminating = NO;
 //  Created by Tom Andersen on 2009/01/28 
 //
 //----------------------------------------------------------------------
-+(void)restoreMetadataDict:(NSDictionary*)buDict toFile:(NSString*)inFile;
++(int)restoreMetadataDict:(NSDictionary*)buDict toFile:(NSString*)inFile;
 {
 	NSDictionary* omDict = [buDict objectForKey:@"omDict"];
+	
+	int numKeysRestored = 0;
 	
 	NSError* error = nil;
 	for (NSString* aKey in [omDict allKeys])
 	{
-		id dataItem = [omDict objectForKey:aKey];
-		if (dataItem)
+		// only restore open meta data:
+		
+		// backward compatibility kOM
+		if ([aKey hasPrefix:@"org.openmetainfo.kOM"])
 		{
-			// only set data that is not already set - the idea of a backup is only replace if missing...
-			// TODO - look at the org.openmetainfo.time time stamps and use them.
-			id storedObject = [OpenMeta getXAttr:aKey path:inFile error:&error];
-			if (storedObject == nil)
-				error = [OpenMeta setXAttr:dataItem forKey:aKey path:inFile];
+			// this is an older backup record. We need to handle this differently:
+			numKeysRestored += [self restoreOldMetadataKey:aKey fromDict:omDict toFile:inFile];
+		}
+		else if ([aKey hasPrefix:@"org.openmetainfo:"])
+		{
+			id dataInBU = [omDict objectForKey:aKey];
+			if (dataInBU)
+			{
+				// Compare dates
+				
+				// get the dates on the attribute on disk and the attribute in the backup dict:
+				NSString* timeKey = [aKey stringByReplacingOccurrencesOfString:@"org.openmetainfo:" withString:@"org.openmetainfo.time:"];
+				NSDate* dateOnDisk = [OpenMeta getXAttr:timeKey path:inFile error:&error];
+				NSDate* dateInBU = [omDict objectForKey:timeKey];
+				BOOL writeDate = (dateInBU != nil);
+				
+				// to compare dates they both need to be there:
+				if (dateOnDisk == nil)
+					dateOnDisk = [NSDate distantPast];
+				if (dateInBU == nil)
+					dateInBU = [NSDate distantPast];
+				
+				NSString* appleMetaDataKey = [aKey stringByReplacingOccurrencesOfString:@"org.openmetainfo:" withString:@"com.apple.metadata:"];
+				
+				// can't use compare, as that is sub - second, and the dates in the backup files are only accurate to the second.
+				NSTimeInterval dateCompare = [dateInBU timeIntervalSinceDate:dateOnDisk]; // positive values indicate that the dateInBackup is newer than the on disk date.
+				if (fabs(dateCompare) < 2.0)
+				{
+					// the dates are the same. Only set if the data is missing on disk 
+					id objectOnDisk = [OpenMeta getXAttr:aKey path:inFile error:&error];
+					if (objectOnDisk == nil)
+					{
+						numKeysRestored++;
+						[OpenMeta setXAttr:dataInBU forKey:aKey path:inFile];
+						if ([omDict objectForKey:appleMetaDataKey])
+							[OpenMeta setXAttr:dataInBU forKey:appleMetaDataKey path:inFile];
+						
+						// if the backup date is 'real' then write it too:
+						if (writeDate)
+							[OpenMeta setXAttr:dateInBU forKey:timeKey path:inFile];
+					}
+				}
+				else if (dateCompare >= 2.0)
+				{
+					// the backup time is later than the on disk time - the data is old.
+					numKeysRestored++;
+					[OpenMeta setXAttr:dataInBU forKey:aKey path:inFile];
+					if ([omDict objectForKey:appleMetaDataKey])
+						[OpenMeta setXAttr:dataInBU forKey:appleMetaDataKey path:inFile];
+					// if the backup date is 'real' then write it too:
+					if (writeDate)
+						[OpenMeta setXAttr:dateInBU forKey:timeKey path:inFile];
+				}
+			}
 		}
 	}
+	return numKeysRestored;
 }
 
 +(BOOL)modDateOfFile:(NSString*)inBackupPath isAfterCreationDateOf:(NSString*)inFile;
@@ -532,7 +829,8 @@ BOOL gOMIsTerminating = NO;
 //
 //	Inputs:		
 //
-//	Outputs:	
+//	Outputs:	Returns YES if the dictionary looked like it was the right one for the file. 
+//				Does NOT tell you if any restore was actually done.
 //
 //  Created by Tom Andersen on 2009/01/28 
 //
@@ -556,6 +854,17 @@ BOOL gOMIsTerminating = NO;
 		// then renamed and moved. So the tags are on the moved file.
 		// when the next screenshot comes down the pipe, the alias will point to the moved file, which is what we want
 		// but if the alias does not work, then we know that the original is nowhere to be found, so we can add tags to this file.
+		
+		// Another tweak: Applications, and perhaps other file types like to use path based tags - when you update an application, 
+		// you want the tags to be reapplied. 
+		if ([[inPath pathExtension] isEqualToString:@"app"])
+		{
+			if (inDelay > 0.0)
+				[NSThread sleepForTimeInterval:inDelay];
+			[self restoreMetadataDict:backupContents toFile:inPath];
+			return YES;
+		}
+		
 		if ([aliasPath length] == 0 || [inPath isEqualToString:aliasPath])
 		{
 			// only restore if the backup file modification date is OLDER than the creation date of the file -
@@ -939,6 +1248,11 @@ BOOL gOMBackupThreadBusy = NO;
 		static NSThread* buThread = nil;
 		if (buThread == nil)
 		{
+			// if there is a file called noBackup 
+			NSString* noBackupPath = [[kBackupPath stringByExpandingTildeInPath] stringByAppendingPathComponent:@"No Backups Please.txt"];
+			if ([[NSFileManager defaultManager] fileExistsAtPath:noBackupPath])
+				gDoOpenMetaBackups = NO;
+			
 			buThread = [[NSThread alloc] initWithTarget:self selector:@selector(backupThreadMain:) object:buThread];
 			[buThread start];
 		}
@@ -1010,10 +1324,80 @@ BOOL gOMBackupThreadBusy = NO;
 +(BOOL)attributeKeyMeansBackup:(NSString*)attrName;
 {
 	// the org.openmetainfo will grab the org.openmetainfo: and org.openmetainfo.time: 
-	if ([attrName hasPrefix:@"org.openmetainfo"] || [attrName hasPrefix:@"kOM"] || [attrName hasPrefix:[OpenMeta spotlightKey:@"kOM"]] || [attrName hasPrefix:[OpenMeta spotlightKey:@"kMDItem"]] )
+	if ([attrName hasPrefix:@"org.openmetainfo"] || [attrName hasPrefix:@"kMDItemOM"] || [attrName hasPrefix:[OpenMeta spotlightKey:@"kMDItem"]] )
 		return YES;
 	
 	return NO;
+}
+
++(NSDictionary*)openMetaDictForPath:(NSString*)inPath;
+{
+	if ([inPath length] == 0)
+		return nil;
+	
+	// create dictionary representing all kMDItemOM* metadata on the file:
+	NSMutableDictionary* omDictionary = [NSMutableDictionary dictionary];
+	
+	char* nameBuffer = nil;
+	
+	ssize_t bytesNeeded = listxattr([inPath fileSystemRepresentation], nil, 0, XATTR_NOFOLLOW);
+	
+	if (bytesNeeded <= 0)
+		return nil; // no attrs or no info.
+	
+	nameBuffer = malloc(bytesNeeded);
+	listxattr([inPath fileSystemRepresentation], nameBuffer, bytesNeeded, XATTR_NOFOLLOW);
+	
+	// walk through the returned buffer, getting names, 
+	char* namePointer = nameBuffer;
+	ssize_t bytesLeft = bytesNeeded;
+	while (bytesLeft > 0)
+	{
+		NSString* attrName = [NSString stringWithUTF8String:namePointer];
+		ssize_t byteLength = strlen(namePointer) + 1;
+		namePointer += byteLength;
+		bytesLeft -= byteLength;
+		
+		// backup all kMDItemOM and kMDItem stuff. This will also back up apple's where froms, etc.
+		if ([self attributeKeyMeansBackup:attrName])
+		{
+			// add to dictionary:
+			NSError* error = nil;
+			id objectStored = [OpenMeta getXAttr:attrName path:inPath error:&error];
+			
+			if (objectStored)
+				[omDictionary setObject:objectStored forKey:attrName];
+		}
+	}
+	if (nameBuffer)
+		free(nameBuffer);
+
+	return omDictionary;
+}
+
++(NSDictionary*)backupDictForPath:(NSString*)inPath;
+{
+	NSDictionary* omDictionary = [self openMetaDictForPath:inPath];
+	if ([omDictionary count] == 0)
+		return nil;
+	
+	NSMutableDictionary* outerDictionary = [NSMutableDictionary dictionary];
+	
+	[outerDictionary setObject:omDictionary forKey:@"omDict"];
+	
+	// create alias to file, so that we can find it easier:
+	NSData* fileAlias = [[self class] aliasDataForPath:inPath];
+	if (fileAlias)
+		[outerDictionary setObject:fileAlias forKey:@"bu_alias"];
+	
+	// store path - which is in the alias too but not directly accessible
+	if (inPath)
+		[outerDictionary setObject:inPath forKey:@"bu_path"];
+	
+	// store date that we did the backup
+	[outerDictionary setObject:[NSDate date] forKey:@"bu_date"];
+	
+	return outerDictionary;
 }
 
 //----------------------------------------------------------------------
@@ -1030,72 +1414,15 @@ BOOL gOMBackupThreadBusy = NO;
 //----------------------------------------------------------------------
 +(void)backupMetadataNow:(NSString*)inPath;
 {
-	if ([inPath length] == 0)
-		return;
-		
-	// create dictionary representing all kOM* metadata on the file:
-	NSMutableDictionary* omDictionary = [NSMutableDictionary dictionary];
+	NSDictionary* backupDict = [self backupDictForPath:inPath];
 	
-	char* nameBuffer = nil;
-	
-	ssize_t bytesNeeded = listxattr([inPath fileSystemRepresentation], nil, 0, XATTR_NOFOLLOW);
-	
-	if (bytesNeeded <= 0)
-		return; // no attrs or no info.
-	
-	nameBuffer = malloc(bytesNeeded);
-	listxattr([inPath fileSystemRepresentation], nameBuffer, bytesNeeded, XATTR_NOFOLLOW);
-	
-	// walk through the returned buffer, getting names, 
-	char* namePointer = nameBuffer;
-	ssize_t bytesLeft = bytesNeeded;
-	while (bytesLeft > 0)
+	if ([backupDict count] > 0)
 	{
-		NSString* attrName = [NSString stringWithUTF8String:namePointer];
-		ssize_t byteLength = strlen(namePointer) + 1;
-		namePointer += byteLength;
-		bytesLeft -= byteLength;
-		
-		// backup all kOM and kMDItem stuff. This will also back up apple's where froms, etc.
-		if ([self attributeKeyMeansBackup:attrName])
-		{
-			// add to dictionary:
-			NSError* error = nil;
-			id objectStored = [OpenMeta getXAttr:attrName path:inPath error:&error];
-			
-			if (objectStored)
-				[omDictionary setObject:objectStored forKey:attrName];
-		}
-	}
-	
-	
-	if ([omDictionary count] > 0)
-	{
-		NSMutableDictionary* outerDictionary = [NSMutableDictionary dictionary];
-		
-		[outerDictionary setObject:omDictionary forKey:@"omDict"];
-		
-		// create alias to file, so that we can find it easier:
-		NSData* fileAlias = [[self class] aliasDataForPath:inPath];
-		if (fileAlias)
-			[outerDictionary setObject:fileAlias forKey:@"bu_alias"];
-		
-		// store path - which is in the alias too but not directly accessible
-		if (inPath)
-			[outerDictionary setObject:inPath forKey:@"bu_path"];
-		
-		// store date that we did the backup
-		[outerDictionary setObject:[NSDate date] forKey:@"bu_date"];
-		
-		
 		// place to put data: 
 		// filename is 
 		NSString* buItemPath = [self backupPathForItem:inPath];
-		[outerDictionary writeToFile:buItemPath atomically:YES];
+		[backupDict writeToFile:buItemPath atomically:YES];
 	}
-	
-	if (nameBuffer)
-		free(nameBuffer);
 }
 
 #pragma mark alias handling
@@ -1480,5 +1807,337 @@ NSThread* sLiveRepairThread = nil;
 
 }
 
+#pragma mark single file backup support
+
++(void)singleFileQueueIsBusyError;
+{
+	// we need to inform:
+	NSDictionary* info = [NSDictionary dictionaryWithObject:@"busy" forKey:@"status"];
+	[[NSNotificationCenter defaultCenter] postNotificationName:OpenMetaBackupSingleFileDoneNote object:info];
+}
+@end
+
+@interface OpenMetaBackupOperation (Private)
+
+-(void)writeSingleFile;
+-(void)readSingleFile;
+-(void)doneTheJob;
 
 @end
+
+
+@implementation OpenMetaBackupOperation
+@synthesize singleFile;
+@synthesize	keysToSearch;
+@synthesize	returnDict;
+@synthesize	writeFile;
+
+-(void)main;
+{
+	// we are either to read or write open meta data:
+	
+	if (self.writeFile)
+		[self writeSingleFile];
+	else 
+		[self readSingleFile];
+	
+	// ok report back the news:
+	[self performSelectorOnMainThread:@selector(doneTheJob:) withObject:nil waitUntilDone:NO];
+}
+
+-(void)dealloc;
+{
+	self.singleFile = nil;
+	self.keysToSearch = nil;
+	self.returnDict = nil;
+	[super dealloc];
+}
+
+-(void)doneTheJob:(id)obj;
+{
+	[[NSNotificationCenter defaultCenter] postNotificationName:OpenMetaBackupSingleFileDoneNote object:self.returnDict];
+}
+
+-(void)writeSingleFile;
+{
+	// first we have to search for all the items we can find. 
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	
+	// create the query
+	if ([self.keysToSearch count] == 0)
+		self.keysToSearch = [NSArray arrayWithObjects:@"kMDItemOMManaged", kMDItemOMUserTags, (NSString*)kMDItemStarRating, nil];
+	
+	NSString* queryString = @"";
+	for (NSString* aKey in self.keysToSearch)
+	{
+		NSString* thisKeyQuery = [NSString stringWithFormat:@"(%@ == *)", aKey];
+		if ([queryString length] > 0)
+			queryString = [queryString stringByAppendingString:@" || "];
+		queryString = [queryString stringByAppendingString:thisKeyQuery];
+	}
+	
+	MDQueryRef mdQuery = MDQueryCreate(nil, (CFStringRef)queryString, nil, nil);
+	
+	// if something is goofy, we won't get the query back, and all calls involving a mil MDQuery crash. So return:
+	if (mdQuery == nil)
+	{
+		[pool release];
+		self.returnDict = [NSDictionary dictionaryWithObject:@"spotlight failed" forKey:@"status"];
+		return;
+	}
+	
+	// look for these everywhere.
+	CFArrayRef scope = (CFArrayRef)[NSArray arrayWithObjects:(NSString*)kMDQueryScopeComputer, (NSString*)kMDQueryScopeNetwork, nil];
+	MDQuerySetSearchScope(mdQuery, scope, 0);
+	
+	[NSRunLoop currentRunLoop]; // need run loop for mdquery
+	
+	
+	// start it
+	MDQuerySetMaxCount(mdQuery, 500000); // so we don't go completely crazy..
+	BOOL queryRunning = MDQueryExecute(mdQuery, kMDQuerySynchronous); 
+	if (!queryRunning)
+	{
+		CFRelease(mdQuery);
+		[pool release];
+		self.returnDict = [NSDictionary dictionaryWithObject:@"spotlight failed" forKey:@"status"];
+		return;
+	}
+	
+	// ok enumerate through the results:
+	NSInteger numResults = MDQueryGetResultCount(mdQuery);
+
+	NSMutableDictionary* mainDict = [NSMutableDictionary dictionary];
+	
+	NSInteger count;
+	for (count = 0; count < numResults; count++)
+	{
+		NSAutoreleasePool* innerPool = [[NSAutoreleasePool alloc] init];
+		
+		MDItemRef theItem = (MDItemRef) MDQueryGetResultAtIndex(mdQuery, count);
+		
+		CFStringRef path = MDItemCopyAttribute(theItem, kMDItemPath);
+		if (path)
+		{
+			NSDictionary* backupDict = [OpenMetaBackup backupDictForPath:(NSString*)path];
+			if (backupDict)
+				[mainDict setObject:backupDict forKey:(NSString*)path];
+			
+			CFRelease(path);
+		}
+		[innerPool release];
+	}
+	
+	CFRelease(mdQuery);
+	
+	BOOL worked = [mainDict writeToFile:self.singleFile atomically:YES];
+	
+	
+	NSString* statusString = [NSString stringWithFormat:@"%d backups done, file written to %@", numResults, [self.singleFile stringByAbbreviatingWithTildeInPath]];
+	self.returnDict = [NSDictionary dictionaryWithObjectsAndKeys:	statusString, @"status",
+																	[NSNumber numberWithBool:worked], @"worked",
+																	[NSNumber numberWithInt:[mainDict count]], @"dictCount",
+																	nil];
+	
+	[pool release];
+}
+
+-(void)readSingleFile;
+{
+	NSDictionary* mainDict = [NSDictionary dictionaryWithContentsOfFile:self.singleFile];
+	if ([mainDict count] == 0)
+	{
+		self.returnDict = [NSDictionary dictionaryWithObject:@"no restore data found" forKey:@"status"];
+		return;
+	}
+	
+	// ok, loop through all keys
+	NSArray* allKeys = [mainDict allKeys];
+	int numberDone = 0;
+	for (NSString* aPath in allKeys)
+	{
+		NSDictionary* backupDict = [mainDict objectForKey:aPath];
+		numberDone += [OpenMetaBackup restoreMetadataFromBackupDictIfNeeded:backupDict];
+	}
+	
+	
+	NSString* statusString = [NSString stringWithFormat:@"%d restores done", numberDone];
+	self.returnDict = [NSDictionary dictionaryWithObjectsAndKeys:	statusString, @"status",
+					   [NSNumber numberWithBool:YES], @"worked",
+					   [NSNumber numberWithInt:[mainDict count]], @"dictCount",
+					   nil];
+	
+}
+
+
+@end
+
+
+#pragma mark convert from old kOM format to new kMDItemOM format
+
+// class for converting from kOMUserTags to kMDItemOMUserTags
+// it actually erases no data, it just adds a few fields of new data
+@implementation OpenMetaUpgradeOperation
+@synthesize		mdQueryString;
+@synthesize		keyToSet;
+
+-(void)upgradeTagsOnItem:(MDItemRef)inItem;
+{
+	NSString* fullOldKey = [@"com.apple.metadata:kOM" stringByAppendingString:keyToSet];
+	
+	NSString* metaNewKey = [@"com.apple.metadata:kMDItemOM" stringByAppendingString:keyToSet];
+	NSString* infoNewKey = [@"org.openmetainfo:kMDItemOM" stringByAppendingString:keyToSet];
+	NSString* timeNewKey = [@"org.openmetainfo.time:kMDItemOM" stringByAppendingString:keyToSet];
+	
+	CFStringRef path = MDItemCopyAttribute(inItem, kMDItemPath);
+	if (path)
+	{
+		NSError* error = nil;
+		NSArray* oldFormatTags = [OpenMeta getXAttr:fullOldKey path:(NSString*)path error:&error];
+		if (error == nil)
+		{
+			NSArray* newFormatTags = [OpenMeta getXAttr:metaNewKey path:(NSString*)path error:&error];
+			if (newFormatTags == nil)
+			{
+				[OpenMeta setXAttr:oldFormatTags forKey:infoNewKey path:(NSString*)path];
+				[OpenMeta setXAttr:oldFormatTags forKey:metaNewKey path:(NSString*)path];
+				[OpenMeta setXAttr:[NSDate date] forKey:timeNewKey path:(NSString*)path];
+			}
+		}
+		CFRelease(path);
+	}
+}
+
+//----------------------------------------------------------------------
+//	progressUpradeQuery
+//
+//	Purpose:	spotlight callback for progress query
+//
+//	NOTE:		This will not be running on the main thread!
+//
+//----------------------------------------------------------------------
+- (void)progressUpradeQuery:(NSNotification *)queryNotification;
+{
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	
+	MDQueryRef mdQuery = (MDQueryRef)[queryNotification object];
+	
+	// added items are not in the dict, we need to go through them...
+	NSInteger numResults = MDQueryGetResultCount(mdQuery);
+	NSInteger count;
+	for (count = 0; count < numResults; count++)
+	{
+		NSAutoreleasePool* innerPool = [[NSAutoreleasePool alloc] init];
+		
+		MDItemRef theItem = (MDItemRef) MDQueryGetResultAtIndex(mdQuery, count);
+		[self upgradeTagsOnItem:(MDItemRef)theItem];
+		[innerPool release];
+	}
+	
+	
+	NSDictionary* updatedInfo = [queryNotification userInfo];
+	NSArray* changedItems = [updatedInfo objectForKey:@"kMDQueryUpdateChangedItems"];
+	
+	// check all changed too
+	for (id mdRef in changedItems)
+		[self upgradeTagsOnItem:(MDItemRef)mdRef];
+
+	[pool release];
+}
+
+- (void)updatedUpradeQuery:(NSNotification *)queryNotification;
+{
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	
+	NSDictionary* updatedInfo = [queryNotification userInfo];
+	NSArray* addedItems = [updatedInfo objectForKey:@"kMDQueryUpdateAddedItems"];
+	NSArray* changedItems = [updatedInfo objectForKey:@"kMDQueryUpdateChangedItems"];
+	
+	// check all changed and added
+	for (id mdRef in addedItems)
+		[self upgradeTagsOnItem:(MDItemRef)mdRef];
+
+	for (id mdRef in changedItems)
+		[self upgradeTagsOnItem:(MDItemRef)mdRef];
+
+	[pool release];
+}
+
+- (void)finishedUpradeQuery:(NSNotification *)queryNotification;
+{	
+#if KP_DEBUG
+	MDQueryRef theQuery = (MDQueryRef)[queryNotification object];
+	NSLog(@" done intial upgrade from kOM to kMDItemOM - query count is %d", MDQueryGetResultCount(theQuery));
+#endif
+}
+
+-(void)keepLiveRepairAlive:(NSTimer*)inTimer;
+{
+	// this keeps run loop running
+}
+
+-(void)main;
+{
+	// we need a list of all files that have kOMUserTags but NOT kMDItemOMUserTags set:
+	// live search:
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	
+	// the timer also keeps the thread running.
+	NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
+	[NSTimer scheduledTimerWithTimeInterval:86400 target:self selector:@selector(keepLiveRepairAlive:) userInfo:nil repeats:YES];
+	
+	// we want to look all files that have kOMUserTags but NOT kMDItemOMUserTags set:
+	NSString* query = mdQueryString;
+	if ([query length] == 0)
+		query = @"((kOMUserTags == *) && (kMDItemOMUserTags != *))";
+	
+	
+	if ([keyToSet length] == 0)
+		keyToSet = @"UserTags";
+
+	
+	MDQueryRef mdQuery = MDQueryCreate(nil, (CFStringRef)query, nil, nil);
+
+	// if something is goofy, we won't get the query back, and all calls involving a mil MDQuery crash. So return:
+	if (mdQuery == nil)
+	{
+		[pool release];
+		return;
+	}
+	
+	NSNotificationCenter* nf = [NSNotificationCenter defaultCenter];
+	[nf addObserver:self selector:@selector(progressUpradeQuery:) name:(NSString*)kMDQueryProgressNotification object:(id) mdQuery];
+	[nf addObserver:self selector:@selector(finishedUpradeQuery:) name:(NSString*)kMDQueryDidFinishNotification object:(id) mdQuery];
+	[nf addObserver:self selector:@selector(updatedUpradeQuery:) name:(NSString*)kMDQueryDidUpdateNotification object:(id) mdQuery];
+	
+	// Should I run this query on the network too? Difficult decision, as I think that this will slow stuff way down.
+	// But i think it will only query leopard servers so perhaps ok
+	//MDQuerySetSearchScope(mdQuery, (CFArrayRef)[NSArray arrayWithObjects:(NSString*)kMDQueryScopeComputer, (NSString*)kMDQueryScopeNetwork, nil], 0); // this is suitable for the way we run leaps, local only
+	
+	// start it
+	BOOL queryRunning = MDQueryExecute(mdQuery, kMDQueryWantsUpdates); 
+	if (!queryRunning)
+	{
+		CFRelease(mdQuery);
+		mdQuery = nil;
+		// leave this log message in...
+		NSLog(@"MDQuery to upgrade open meta tags for snow leopard failed to start.");
+		[pool release];
+		return;
+	}
+		
+	while (!gOMIsTerminating) // run till the end
+	{
+		NSAutoreleasePool *poolWhileLoop = [[NSAutoreleasePool alloc] init];
+		[runLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
+		[poolWhileLoop release];
+	}
+	
+	CFRelease(mdQuery);
+	mdQuery = nil;
+	[pool release];
+
+}
+
+@end
+

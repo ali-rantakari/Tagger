@@ -55,7 +55,7 @@ OTHER DEALINGS IN THE SOFTWARE.
         is to write the tags somewhere else (eg sidecar files). 
         
         The other solution is the tact taken by Open Meta. 
-        Keywords are written to their own tag, which is indexed by Spotlight, (kOMUserTags). 
+        Keywords are written to their own tag, which is indexed by Spotlight, (kMDItemOMUserTags). 
         These tags are independent of kMDItemkeywords. 
         They can be written in the exact same very simple manner to each and every file on the file system. 
         They do not hide the keywords set on the file. 
@@ -84,7 +84,7 @@ OTHER DEALINGS IN THE SOFTWARE.
         ----------------------
         Open Meta is a clean simple way to set user entered searchable metadata on any file on Mac OS X. 
         Concepts like namespaces are not encouraged, as most users have no idea what a namespace is. The tradeoff is a 
-        small amount of _understandable_ ambiguity - searching for Tags:apple (i.e. kOMUserTags == "apple"cd) will find
+        small amount of _understandable_ ambiguity - searching for Tags:apple (i.e. kMDItemOMUserTags == "apple"cd) will find
         all files having to do with both the fruit one can eat, and the company that makes computers. Users expect this. 
         With namespaces an improperly constructed query will usually result in 'no matches'. 
 */
@@ -93,7 +93,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 /*
     Note on Backup.
 	
-	Whenever you set an item with kOM* as the key, openmeta will make sure that there is a backup made of the tags, etc, that 
+	Whenever you set an item with kMDItemOM* as the key, openmeta will make sure that there is a backup made of the tags, etc, that 
 	you have set on the file. The backups go into the folder ~/Library/Application Support/OpenMeta/backups/2009 etc. The backups are
 	one file per item, and are on a month by month basis. This may be all the backup you need, as time machine will back these up.
 	
@@ -134,13 +134,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define OM_MetaTooBigError (-5)
 // A very common errno error code is ENOATTR - the attribute is not set on the file. - which we don't consider an error
 
-extern NSString* const kOMUserTags;
-extern NSString* const kOMUserTagTime;
-extern NSString* const kOMDocumentDate;
-extern NSString* const kOMBookmarks; // list of urls - bookmarks as nsarray nsstring 
-extern NSString* const kOMUserTagApplication;
+extern NSString* const kMDItemOMUserTags;
+extern NSString* const kMDItemOMUserTagTime;
+extern NSString* const kMDItemOMDocumentDate;
+extern NSString* const kMDItemOMBookmarks; // list of urls - bookmarks as nsarray nsstring 
+extern NSString* const kMDItemOMUserTagApplication;
 
-extern const double kOMMaxRating;
+extern const double kMDItemOMMaxRating;
 
 // kMDItemKeywords
 @interface OpenMeta : NSObject {
@@ -189,40 +189,10 @@ extern const double kOMMaxRating;
 // is use the setDictionaries call. You organize your data in an array of dictionaries, 
 // and each dict will be put into the metadata store and NOT be indexed by spotlight. 
 // In each dictionary, you optionally set one item with the key @"name" and THAT information will be stored in the spotlight DB
-// Say you set keyName to 'kOMLastPrintedInfo', then there would be an xattr with the name 'kOMLastPrintedInfo' that is an array of nsdictionaries
-// AND an xattr set on the file with com.apple.metadata:kOMLastPrintedInfo' which will be an array of the 'names' from the dicts. 
+// Say you set keyName to 'kMDItemOMLastPrintedInfo', then there would be an xattr with the name 'kMDItemOMLastPrintedInfo' that is an array of nsdictionaries
+// AND an xattr set on the file with com.apple.metadata:kMDItemOMLastPrintedInfo' which will be an array of the 'names' from the dicts. 
 // the 'name' would usually be used for search purposes. Other data can be 'anything'
 
-// arrays of dictionaries:
-// Spotlight can't have dictionaries in it's database. 
-// We can store an array of dictionaries, and in spotlight have an array of names of the
-// dictionaries. The names are optional in each dictionary, with the key @"name"
-// @"name" can be a string (usually), date, or nsnumber.  
-// To store a single dict, just use [NSArray arrayWithObject:myDict];
-+(NSError*)setDictionaries:(NSArray*)arrayOfDicts keyName:(NSString*)keyName path:(NSString*)path;
-+(NSArray*)getDictionaries:(NSString*)keyName path:(NSString*)path error:(NSError**)error;
-+(NSArray*)getDictionariesNames:(NSString*)keyName path:(NSString*)path error:(NSError**)error; // returns array of names as strings, dates, or numbers
-
-// optional keys on any dict
-//					key "date" the date of the request time set, etc.
-
-
-// kOMBookmarks -	array of dictionaries
-//					key "name" searchable user entered name - page name, etc 
-//					key "url"	the url that the bookmark points to
-
-// kOMApproved -	array of dictionaries
-//					key "name" searchable name like "jim simpson" or "talisker" 
-//					key "date" the date of the approval
-
-// kOMWorkflow -	array of dictionaries
-//					key "name" searchable name like "jim simpson" or "taligent" 
-//					key "what" what needs done by that person/company - user entered - no robot commands!
-//					key "duedate" the due date of the request
-//					key "auto" dictionary of instructions for an automatic or robotic task
-
-// kOMProjects -	array of dictionaries (AKA cases in legal world)
-//					key "name" searchable name like "sampson" or "Orion Project" 
 
 // for meta data in arrays: The add call weeds out duplicates 
 +(NSArray*)getNSArrayMetaData:(NSString*)metaDataKey path:(NSString*)path error:(NSError**)error;
@@ -237,7 +207,16 @@ extern const double kOMMaxRating;
 +(id)getXAttrMetaData:(NSString*)metaDataKey path:(NSString*)path error:(NSError**)error;
 +(NSError*)setXAttrMetaData:(id)plistObject metaDataKey:(NSString*)metaDataKey path:(NSString*)path;
 
-// These getters and setters are to set xattr data that will be NOT read and indexed by spotlight
+// dictionaries:
+// Spotlight can't have dictionaries in it's database.
+// remember that. You can store dictionaries using getXAttrMetaDataNoSpotlightMirror, or just setXAttr
+
+
+// to set data with no spotlight mirror, use this. omKey is something like kMDItemOMSomeKeyThatsNotNeededInSpotlight
++(id)getXAttrMetaDataNoSpotlightMirror:(NSString*)omKey path:(NSString*)path error:(NSError**)error;
++(NSError*)setXAttrNoSpotlightMirror:(id)plistObject omKey:(NSString*)omKey path:(NSString*)path;
+
+// These getters and setters are to set xattr data that will be NOT read and indexed by spotlight - nor are openmeta time stamps set, nor is restore done on backup.
 // The passed plist object will be converted to data as a binary plist object. (plist object is for example an nsdictionary or nsarray)
 // You can pass data up to 4k (or close to that depending on how much the data takes up in binary plist format)
 +(id)getXAttr:(NSString*)inKeyName path:(NSString*)path error:(NSError**)error;
@@ -247,7 +226,7 @@ extern const double kOMMaxRating;
 // utils
 +(NSArray*)orderedArrayWithDict:(NSDictionary*)inTags sortHint:(NSArray*)inSortedItems;
 
-// this call makes sure that all the keys in the OpenMeta kOM group get seen by Spotlight, so that the associated strings.xml. strings.schema, etc can work.
+// this call makes sure that all the keys in the OpenMeta kMDItemOM group get seen by Spotlight, so that the associated strings.xml. strings.schema, etc can work.
 +(void)registerUsualOMAttributes; // just call this on launch if you want to be sure. 
 +(void)registerOMAttributes:(NSDictionary*)typicalAttributes forAppName:(NSString*)appName;
 

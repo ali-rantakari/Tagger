@@ -22,6 +22,10 @@
 
 // TODO:
 // 
+// - Make sure .webloc filenames don't start with a dot
+// - Deal with web page titles that are empty after sanitizing
+// - Add OmniWeb support
+// 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
 // 
 // - Make the token field colors more pleasant

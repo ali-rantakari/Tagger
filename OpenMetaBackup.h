@@ -32,7 +32,7 @@ but with network volumes or mobile volumes, it may be better to store the backup
 // individual file handling:
 // ---------------------------
 
-// backup is called automatically each time you set any attribute with kOM*, so you actually don't have to call this.
+// backup is called automatically each time you set any attribute with kMDItemOM*, so you actually don't have to call this.
 +(void)backupMetadata:(NSString*)inPath;
 
 // restore is called for you ONLY on tags and ratings. If you are using OpenMeta and not using tags or ratings, you need to call this first, in case the 
@@ -56,6 +56,8 @@ but with network volumes or mobile volumes, it may be better to store the backup
 +(void)startLiveRepairThread;
 +(void)stopLiveRepairThread; // you can't start/stop the live repair 
 
+// upgrade to open meta kMDItemOM user tags.
++(void)upgradeOpenMetaTokMDItemOM;
 
 // shutting down OpenMeta backup and restore systems 
 // ---------------------------
@@ -65,6 +67,40 @@ but with network volumes or mobile volumes, it may be better to store the backup
 
 // for OpenMeta.m use
 +(BOOL)attributeKeyMeansBackup:(NSString*)attrName;
++(void)copyTagsFromOldKeyTokMDItemOMIfNeeded:(NSString*)inPath;
 
+// these calls are async and send a notification on main thread when they are done. 
++(void)backupMetadataToSingleFile:(NSArray*)inKeys toFile:(NSString*)toFile;
++(void)restoreMetadataFromSingleFile:(NSString*)inBackupFile;
 
 @end
+
+// class for single file bullk backup
+@interface OpenMetaBackupOperation : NSOperation
+{
+	NSString* singleFile;
+	NSArray* keysToSearch;
+	NSDictionary* returnDict;
+	BOOL writeFile;
+}
+
+@property (retain) NSString*  singleFile;
+@property (retain) NSArray*  keysToSearch;
+@property (retain) NSDictionary*  returnDict;
+@property  BOOL  writeFile;
+
+@end
+
+
+// class for converting from kOMUserTags to kMDItemOMUserTags
+// it actually erases no data, it just adds a few fields of new data
+@interface OpenMetaUpgradeOperation : NSOperation
+{
+	NSString* mdQueryString;
+	NSString* keyToSet;
+}
+@property (retain) NSString*  mdQueryString;
+@property (retain) NSString*  keyToSet;
+@end
+
+
