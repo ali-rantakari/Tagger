@@ -26,7 +26,6 @@
 #import "OpenMetaPrefs.h"
 #import "OpenMetaBackup.h"
 #import "TaggerDefines.h"
-#import "TaggerOMImporterInstallController.h"
 
 
 @interface TaggerController : NSObject
@@ -65,9 +64,6 @@
 
 
 - (NSString *) getVersionString;
-- (NSComparisonResult) versionNumberCompareWithFirst:(NSString *)first second:(NSString *)second;
-
-- (void) showOpenMetaSpotlightImporterInstallDialog;
 
 - (void) addFileToTag:(NSString *)aFilePath;
 
@@ -78,7 +74,6 @@
 - (IBAction) preferencesSelected:(id)sender;
 - (IBAction) okSelected:(id)sender;
 - (IBAction) updateSelected:(id)sender;
-- (IBAction) installSpotlightSupportSelected:(id)sender;
 - (IBAction) showFileListSelected:(id)sender;
 - (IBAction) closeFileListSelected:(id)sender;
 - (IBAction) goToWebsiteSelected:(id)sender;

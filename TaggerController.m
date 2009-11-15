@@ -44,6 +44,7 @@
 #import "TaggerController.h"
 #import "NSArray+NSTableViewDataSource.h"
 #import "PFMoveApplication.h"
+#import "HGVersionNumberCompare.h"
 
 
 #define kAppSiteURL			@"http://hasseg.org/tagger/"
@@ -340,67 +341,8 @@ static NSString* frontAppBundleID = nil;
 	return [[NSBundle bundleForClass:[self class]] objectForInfoDictionaryKey:(NSString *)kCFBundleVersionKey];
 }
 
-// helper method: compare three-part version number strings (e.g. "1.0.3")
-- (NSComparisonResult) versionNumberCompareWithFirst:(NSString *)first second:(NSString *)second
-{
-	if (first != nil && second != nil)
-	{
-		int i;
-		
-		NSMutableArray *firstComponents = [NSMutableArray arrayWithCapacity:3];
-		[firstComponents addObjectsFromArray:[first componentsSeparatedByString:@"."]];
-		
-		NSMutableArray *secondComponents = [NSMutableArray arrayWithCapacity:3];
-		[secondComponents addObjectsFromArray:[second componentsSeparatedByString:@"."]];
-		
-		if ([firstComponents count] != [secondComponents count])
-		{
-			NSMutableArray *shorter;
-			NSMutableArray *longer;
-			if ([firstComponents count] > [secondComponents count])
-			{
-				shorter = secondComponents;
-				longer = firstComponents;
-			}
-			else
-			{
-				shorter = firstComponents;
-				longer = secondComponents;
-			}
-			
-			NSUInteger countDiff = [longer count] - [shorter count];
-			
-			for (i = 0; i < countDiff; i++)
-				[shorter addObject:@"0"];
-		}
-		
-		for (i = 0; i < [firstComponents count]; i++)
-		{
-			int firstComponentIntVal = [[firstComponents objectAtIndex:i] intValue];
-			int secondComponentIntVal = [[secondComponents objectAtIndex:i] intValue];
-			if (firstComponentIntVal < secondComponentIntVal)
-				return NSOrderedAscending;
-			else if (firstComponentIntVal > secondComponentIntVal)
-				return NSOrderedDescending;
-		}
-		return NSOrderedSame;
-	}
-	else
-		return NSOrderedSame;
-}
 
 
-
-- (void) showOpenMetaSpotlightImporterInstallDialog
-{
-	[NSApp
-	 beginSheet:installSpotlightSupportSheet
-	 modalForWindow:mainWindow
-	 modalDelegate:self
-	 didEndSelector:NULL
-	 contextInfo:nil
-	];
-}
 
 - (void) showFileListDialog
 {
@@ -467,11 +409,6 @@ static NSString* frontAppBundleID = nil;
 - (IBAction) okSelected:(id)sender
 {
 	[self setTagsAndQuit];
-}
-
-- (IBAction) installSpotlightSupportSelected:(id)sender
-{
-	[self showOpenMetaSpotlightImporterInstallDialog];
 }
 
 - (IBAction) showFileListSelected:(id)sender
@@ -801,17 +738,6 @@ doCommandBySelector:(SEL)command
 {
 	DDLogInfo(@"applicationDidFinishLaunching");
 	DDLogInfo(@"frontAppBundleID = %@", frontAppBundleID);
-	
-	// check if the Spotlight importer has been installed (we do this only
-	// once for each user)
-	if (![kDefaults boolForKey:kDefaultsKey_OMSpotlightImporterInstallCheckDone])
-	{
-		BOOL installed = [TaggerOMImporterInstallController isOpenMetaSpotlightImporterInstalled:NULL];
-		if (!installed)
-			[self showOpenMetaSpotlightImporterInstallDialog];
-		
-		[kDefaults setBool:YES forKey:kDefaultsKey_OMSpotlightImporterInstallCheckDone];
-	}
 	
 	[progressIndicator startAnimation:self];
 	
@@ -1166,7 +1092,7 @@ doCommandBySelector:(SEL)command
 		NSString *latestVersionString = [[response allHeaderFields] valueForKey:@"Orghassegsoftwarelatestversion"];
 		NSString *currentVersionString = [self getVersionString];
 		
-		if ([self versionNumberCompareWithFirst:currentVersionString second:latestVersionString] == NSOrderedAscending)
+		if (versionNumberCompare(currentVersionString, latestVersionString) == NSOrderedAscending)
 		{
 			DDLogInfo(@"update found! (latest: %@ current: %@)", latestVersionString, currentVersionString);
 			[updateButton setEnabled: YES];

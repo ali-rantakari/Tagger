@@ -23,8 +23,8 @@
 		C94C9A220ED0E0C900A556A4 /* manyFiles.png in Resources */ = {isa = PBXBuildFile; fileRef = C94C9A210ED0E0C900A556A4 /* manyFiles.png */; };
 		C9781D031076390E00A79940 /* NSArray+NSTableViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */; };
 		C9873AB80DFC00680083AFCC /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9873AB70DFC00680083AFCC /* Carbon.framework */; };
-		C9CAF0D110080E2400328AFF /* TaggerOMImporterInstallController.m in Sources */ = {isa = PBXBuildFile; fileRef = C9CAF0D010080E2400328AFF /* TaggerOMImporterInstallController.m */; };
-		C9CAF186100819A300328AFF /* OpenMetaSpotlight.mdimporter in Resources */ = {isa = PBXBuildFile; fileRef = C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */; };
+		C98A7F3210B03BC600D0C2CE /* HGVersionNumberCompare.m in Sources */ = {isa = PBXBuildFile; fileRef = C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */; };
+		C98A7F4610B05DBC00D0C2CE /* OpenMetaSpotlight.mdimporter in Copy Files: Library Spotlight */ = {isa = PBXBuildFile; fileRef = C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */; };
 		C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */ = {isa = PBXBuildFile; fileRef = C9D85E930E012D3900A20C1D /* Tagger.icns */; };
 /* End PBXBuildFile section */
 
@@ -36,6 +36,17 @@
 			dstSubfolderSpec = 10;
 			files = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C98A7F4F10B05DD900D0C2CE /* Copy Files: Library Spotlight */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/Spotlight;
+			dstSubfolderSpec = 1;
+			files = (
+				C98A7F4610B05DBC00D0C2CE /* OpenMetaSpotlight.mdimporter in Copy Files: Library Spotlight */,
+			);
+			name = "Copy Files: Library Spotlight";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -71,8 +82,8 @@
 		C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSArray+NSTableViewDataSource.h"; sourceTree = "<group>"; };
 		C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSArray+NSTableViewDataSource.m"; sourceTree = "<group>"; };
 		C9873AB70DFC00680083AFCC /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
-		C9CAF0CF10080E2400328AFF /* TaggerOMImporterInstallController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerOMImporterInstallController.h; sourceTree = "<group>"; };
-		C9CAF0D010080E2400328AFF /* TaggerOMImporterInstallController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TaggerOMImporterInstallController.m; sourceTree = "<group>"; };
+		C98A7F3010B03BC600D0C2CE /* HGVersionNumberCompare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HGVersionNumberCompare.h; sourceTree = "<group>"; };
+		C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HGVersionNumberCompare.m; sourceTree = "<group>"; };
 		C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */ = {isa = PBXFileReference; lastKnownFileType = folder; path = OpenMetaSpotlight.mdimporter; sourceTree = "<group>"; };
 		C9CAF1D8100821DA00328AFF /* TaggerDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerDefines.h; sourceTree = "<group>"; };
 		C9D85E930E012D3900A20C1D /* Tagger.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Tagger.icns; sourceTree = "<group>"; };
@@ -102,10 +113,10 @@
 				C9CAF1D8100821DA00328AFF /* TaggerDefines.h */,
 				C90301130DF9FAE9009B1A5E /* TaggerController.h */,
 				C90301140DF9FAE9009B1A5E /* TaggerController.m */,
-				C9CAF0CF10080E2400328AFF /* TaggerOMImporterInstallController.h */,
-				C9CAF0D010080E2400328AFF /* TaggerOMImporterInstallController.m */,
 				C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */,
 				C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */,
+				C98A7F3010B03BC600D0C2CE /* HGVersionNumberCompare.h */,
+				C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -226,6 +237,7 @@
 				C91F14D90DF48DC800D7C9AE /* CopyFiles */,
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
+				C98A7F4F10B05DD900D0C2CE /* Copy Files: Library Spotlight */,
 			);
 			buildRules = (
 			);
@@ -264,7 +276,6 @@
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */,
 				C94C9A220ED0E0C900A556A4 /* manyFiles.png in Resources */,
-				C9CAF186100819A300328AFF /* OpenMetaSpotlight.mdimporter in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -282,9 +293,9 @@
 				C91647920FDDA45200B6FA19 /* OpenMetaAuthenticate.m in Sources */,
 				C91647930FDDA45200B6FA19 /* OpenMetaBackup.m in Sources */,
 				C91647940FDDA45200B6FA19 /* OpenMetaPrefs.m in Sources */,
-				C9CAF0D110080E2400328AFF /* TaggerOMImporterInstallController.m in Sources */,
 				C9781D031076390E00A79940 /* NSArray+NSTableViewDataSource.m in Sources */,
 				C93CBC45107783300020539B /* PFMoveApplication.m in Sources */,
+				C98A7F3210B03BC600D0C2CE /* HGVersionNumberCompare.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
