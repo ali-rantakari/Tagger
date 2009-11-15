@@ -22,9 +22,6 @@
 
 // TODO:
 // 
-// - Update the OM spotlight importer if an older version is
-//   installed.
-// 
 // - Add OmniWeb support
 // 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
