@@ -22,7 +22,9 @@
 
 // TODO:
 // 
-// - Deal with web page titles that are empty after sanitizing
+// - Update the OM spotlight importer if an older version is
+//   installed.
+// 
 // - Add OmniWeb support
 // 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
@@ -678,13 +680,34 @@ doCommandBySelector:(SEL)command
 	// file and the secondary is a more unique version of the filename
 	// that we'll use to avoid collisions (i.e. two web pages at different
 	// URLs with the same title)
+	// 
 	NSString *primaryFilename = [title
 								 stringByReplacingOccurrencesOfString:@"/"
 								 withString:@"-"];
+	// remove all leading dots
 	while ([primaryFilename hasPrefix:@"."])
 	{
 		primaryFilename = [primaryFilename substringFromIndex:1];
 	}
+	
+	BOOL useSecondaryFilename = NO;
+	if ([[primaryFilename stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] length] == 0)
+	{
+		// (this probably won't happen with Safari since if
+		// the page title is empty Safari will still give us the
+		// filename as the title instead of an empty string.
+		// probably the other browsers do something similar.)
+		// 
+		// page title is all whitespace after sanitizing, so
+		// we'll just use some dumbo default filename:
+		// 
+		primaryFilename = @"Web Page";
+		// also force usage of the secondary name (with the
+		// url at the end)
+		// 
+		useSecondaryFilename = YES;
+	}
+	
 	NSString *primaryPath = [self.weblocFilesFolderPath
 							 stringByAppendingPathComponent:
 							 [primaryFilename stringByAppendingString:@".webloc"]
@@ -709,7 +732,9 @@ doCommandBySelector:(SEL)command
 	
 	NSString *newWeblocPath = primaryPath;
 	
-	if ([[NSFileManager defaultManager] fileExistsAtPath:primaryPath])
+	if (useSecondaryFilename)
+		newWeblocPath = secondaryPath;
+	else if ([[NSFileManager defaultManager] fileExistsAtPath:primaryPath])
 	{
 		// make sure the URL matches as well:
 		NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:primaryPath];
