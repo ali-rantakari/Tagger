@@ -30,8 +30,6 @@
 // 
 // - OpenMeta allows commas in tag names -- how to handle?
 // 
-// - add Help somewhere
-// 
 
 
 // BUGS TO FIX:

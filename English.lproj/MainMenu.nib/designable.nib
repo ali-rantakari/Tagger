@@ -12,11 +12,11 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="516"/>
-			<integer value="744"/>
 			<integer value="644"/>
-			<integer value="839"/>
+			<integer value="516"/>
+			<integer value="745"/>
 			<integer value="375"/>
+			<integer value="839"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -707,6 +707,30 @@
 							</object>
 						</object>
 					</object>
+					<object class="NSMenuItem" id="804757093">
+						<reference key="NSMenu" ref="415610469"/>
+						<string key="NSTitle">Help</string>
+						<string key="NSKeyEquiv"/>
+						<int key="NSKeyEquivModMask">1048576</int>
+						<int key="NSMnemonicLoc">2147483647</int>
+						<reference key="NSOnImage" ref="884813485"/>
+						<reference key="NSMixedImage" ref="1066947579"/>
+						<string key="NSAction">submenuAction:</string>
+						<object class="NSMenu" key="NSSubmenu" id="225239046">
+							<string key="NSTitle">Help</string>
+							<object class="NSMutableArray" key="NSMenuItems">
+								<bool key="EncodedWithXMLCoder">YES</bool>
+								<object class="NSMenuItem" id="814922733">
+									<reference key="NSMenu" ref="225239046"/>
+									<string key="NSTitle">Tagger Help (Opens Website)</string>
+									<string key="NSKeyEquiv"/>
+									<int key="NSMnemonicLoc">2147483647</int>
+									<reference key="NSOnImage" ref="884813485"/>
+									<reference key="NSMixedImage" ref="1066947579"/>
+								</object>
+							</object>
+						</object>
+					</object>
 				</object>
 				<string key="NSName">_NSMainMenu</string>
 			</object>
@@ -787,7 +811,7 @@
 			<object class="NSWindowTemplate" id="52059341">
 				<int key="NSWindowStyleMask">19</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{696, 465}, {313, 250}}</string>
+				<string key="NSWindowRect">{{696, 430}, {313, 285}}</string>
 				<int key="NSWTFlags">-461897728</int>
 				<string key="NSWindowTitle">About Tagger</string>
 				<string key="NSWindowClass">NSPanel</string>
@@ -813,7 +837,7 @@
 									<string>NeXT TIFF v4.0 pasteboard type</string>
 								</object>
 							</object>
-							<string key="NSFrame">{{17, 185}, {48, 48}}</string>
+							<string key="NSFrame">{{17, 220}, {48, 48}}</string>
 							<reference key="NSSuperview" ref="509700334"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSImageCell" key="NSCell" id="930808394">
@@ -833,7 +857,7 @@
 						<object class="NSTextField" id="178362169">
 							<reference key="NSNextResponder" ref="509700334"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{79, 211}, {98, 19}}</string>
+							<string key="NSFrame">{{79, 246}, {98, 19}}</string>
 							<reference key="NSSuperview" ref="509700334"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="403773571">
@@ -853,7 +877,7 @@
 						<object class="NSTextField" id="228214717">
 							<reference key="NSNextResponder" ref="509700334"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{79, 45}, {217, 132}}</string>
+							<string key="NSFrame">{{79, 72}, {217, 140}}</string>
 							<reference key="NSSuperview" ref="509700334"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="729227488">
@@ -861,8 +885,9 @@
 								<int key="NSCellFlags2">1346371584</int>
 								<string type="base64-UTF8" key="NSContents">Q29weXJpZ2h0IMKpIDIwMDgtMjAwOSBBbGkgUmFudGFrYXJpLgoKVGFnZ2VyIGlzIGxpY2Vuc2VkIHVu
 ZGVyIHRoZSBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSwgdmVyc2lvbiAyLgoKVGFnZ2VyIGluY2x1
-ZGVzIE5TSW1hZ2UrUXVpY2tsb29rIGNvZGUgYnkgTWF0dCBHZW1tZWxsIGFuZCBMZXRzTW92ZSBjb2Rl
-IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</string>
+ZGVzIE9wZW5NZXRhIGNvZGUgYnkgVG9tIEFuZGVyc2VuLCBOU0ltYWdlK1F1aWNrbG9vayBjb2RlIGJ5
+IE1hdHQgR2VtbWVsbCBhbmQgTGV0c01vdmUgY29kZSBieSBBbmR5IEtpbSwgSm9obiBCcmF5dG9uLCBD
+aGFkIFNlbGxlcnMgYW5kIEVpdGEgSGF5YXNoaS4</string>
 								<object class="NSFont" key="NSSupport" id="961623726">
 									<string key="NSName">LucidaGrande</string>
 									<double key="NSSize">11</double>
@@ -896,7 +921,7 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 						<object class="NSTextField" id="1048957878">
 							<reference key="NSNextResponder" ref="509700334"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{79, 191}, {217, 17}}</string>
+							<string key="NSFrame">{{79, 226}, {217, 17}}</string>
 							<reference key="NSSuperview" ref="509700334"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="266537479">
@@ -910,7 +935,7 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 							</object>
 						</object>
 					</object>
-					<string key="NSFrameSize">{313, 250}</string>
+					<string key="NSFrameSize">{313, 285}</string>
 					<reference key="NSSuperview"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1680, 1028}}</string>
@@ -1482,6 +1507,14 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 					</object>
 					<int key="connectionID">866</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">goToWebsiteSelected:</string>
+						<reference key="source" ref="873557333"/>
+						<reference key="destination" ref="814922733"/>
+					</object>
+					<int key="connectionID">924</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -1609,6 +1642,7 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 							<reference ref="837487266"/>
 							<reference ref="527251165"/>
 							<reference ref="95554086"/>
+							<reference ref="804757093"/>
 						</object>
 						<reference key="parent" ref="0"/>
 						<string key="objectName">MainMenu</string>
@@ -2218,6 +2252,29 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 						<reference key="object" ref="929200152"/>
 						<reference key="parent" ref="585760336"/>
 					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">873</int>
+						<reference key="object" ref="804757093"/>
+						<object class="NSMutableArray" key="children">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<reference ref="225239046"/>
+						</object>
+						<reference key="parent" ref="415610469"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">874</int>
+						<reference key="object" ref="225239046"/>
+						<object class="NSMutableArray" key="children">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<reference ref="814922733"/>
+						</object>
+						<reference key="parent" ref="804757093"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">878</int>
+						<reference key="object" ref="814922733"/>
+						<reference key="parent" ref="225239046"/>
+					</object>
 				</object>
 			</object>
 			<object class="NSMutableDictionary" key="flattenedProperties">
@@ -2404,6 +2461,14 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 					<string>854.IBPluginDependency</string>
 					<string>857.IBPluginDependency</string>
 					<string>857.ImportedFromIB2</string>
+					<string>873.IBPluginDependency</string>
+					<string>873.ImportedFromIB2</string>
+					<string>874.IBEditorWindowLastContentRect</string>
+					<string>874.IBPluginDependency</string>
+					<string>874.ImportedFromIB2</string>
+					<string>874.editorWindowContentRectSynchronizationRect</string>
+					<string>878.IBPluginDependency</string>
+					<string>878.ImportedFromIB2</string>
 				</object>
 				<object class="NSMutableArray" key="dict.values">
 					<bool key="EncodedWithXMLCoder">YES</bool>
@@ -2437,7 +2502,7 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
-					<string>{{258, 714}, {179, 20}}</string>
+					<string>{{258, 714}, {228, 20}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>{74, 862}</string>
@@ -2480,9 +2545,9 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
-					<string>{{498, 374}, {313, 250}}</string>
+					<string>{{498, 339}, {313, 285}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
-					<string>{{498, 374}, {313, 250}}</string>
+					<string>{{498, 339}, {313, 285}}</string>
 					<boolean value="NO"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -2515,7 +2580,7 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
-					<string>{{265, 434}, {240, 243}}</string>
+					<string>{{381, 471}, {240, 243}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
 					<string>{{187, 434}, {243, 243}}</string>
@@ -2606,6 +2671,14 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<integer value="1"/>
+					<string>{{425, 691}, {249, 23}}</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<integer value="1"/>
+					<string>{{187, 434}, {243, 243}}</string>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<integer value="1"/>
 				</object>
 			</object>
 			<object class="NSMutableDictionary" key="unlocalizedProperties">
@@ -2624,7 +2697,7 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">872</int>
+			<int key="maxID">924</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2639,7 +2712,6 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 							<string>aboutSelected:</string>
 							<string>closeFileListSelected:</string>
 							<string>goToWebsiteSelected:</string>
-							<string>installSpotlightSupportSelected:</string>
 							<string>okSelected:</string>
 							<string>preferencesSelected:</string>
 							<string>showFileListSelected:</string>
@@ -2647,7 +2719,6 @@ IGJ5IEFuZHkgS2ltLCBKb2huIEJyYXl0b24sIENoYWQgU2VsbGVycyBhbmQgRWl0YSBIYXlhc2hpLg</
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
