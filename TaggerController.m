@@ -47,6 +47,7 @@
 #define kVersionCheckURL	[NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
 
 #define FINDER_BUNDLE_ID		@"com.apple.finder"
+#define MAIL_BUNDLE_ID			@"com.apple.mail"
 #define SAFARI_BUNDLE_ID		@"com.apple.Safari"
 #define FIREFOX_BUNDLE_ID		@"org.mozilla.firefox"
 #define CAMINO_BUNDLE_ID		@"org.mozilla.camino"
@@ -135,6 +136,29 @@
 			return \"\"\n\
 		end if\n\
 	end tell"
+
+#define MAIL_GET_FIRST_SELECTED_EMAIL_SUBJECT_APPLESCRIPT \
+	@"tell application \"Mail\" to return (subject of first item of (selection as list))"
+
+#define MAIL_GET_SELECTED_EMAILS_APPLESCRIPT \
+	@"set emailPaths to \"\"\n\
+	set downloaderror to false\n\
+	tell application \"Mail\"\n\
+		repeat with msg in (selection as list)\n\
+			set theId to id of msg\n\
+			set thisPath to (do shell script \"mdfind -onlyin ~/Library/Mail \\\"kMDItemFSName = '\" & theId & \".emlx'\\\"\")\n\
+			if thisPath = \"\" then\n\
+				set downloaderror to true\n\
+			else\n\
+				set thisPath to (POSIX path of thisPath)\n\
+				set emailPaths to emailPaths & \"\n\" & thisPath\n\
+			end if\n\
+		end repeat\n\
+	end tell\n\
+	if downloaderror then\n\
+	return \"error\"\n\
+	end if\n\
+	return emailPaths"
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
 \n\
@@ -768,6 +792,80 @@ doCommandBySelector:(SEL)command
 				}
 				
 				[getFinderSelectionAS release];
+			}
+		}
+		else if ([frontAppBundleID isEqualToString:MAIL_BUNDLE_ID])
+		{
+			// try to get the selected email files in Mail.app
+			NSDictionary *appleScriptError = nil;
+			NSString *getEmailFilesASSource = MAIL_GET_SELECTED_EMAILS_APPLESCRIPT;
+			
+			if (getEmailFilesASSource != nil)
+			{
+				NSAppleScript *getEmailFilesAS = [[NSAppleScript alloc] initWithSource:getEmailFilesASSource];
+				NSAppleEventDescriptor *ret = [getEmailFilesAS executeAndReturnError:&appleScriptError];
+				
+				if ([ret stringValue] != nil)
+				{
+					if ([[ret stringValue] isEqualToString:@"error"])
+					{
+						NSRunAlertPanel(@"Error Tagging Emails from Mail.app",
+										@"Could not find all the files for the selected email messages. This could simply mean that not all messages have been fully downloaded by Mail. Please try again after Mail is done downloading the messages.",
+										@"OK",
+										nil,
+										nil);
+					}
+					else
+					{
+						NSArray *separatedPaths = [[[ret stringValue]
+													stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
+													] componentsSeparatedByString:@"\n"
+												   ];
+						NSString *thisPath;
+						for (thisPath in separatedPaths)
+						{
+							[self addFileToTag:thisPath];
+						}
+					}
+				}
+				
+				[getEmailFilesAS release];
+			}
+			
+			if ([self.filesToTag count] > 0)
+			{
+				// tagging emails; set appropriate title (the email
+				// filenames used by Mail.app are not exactly very
+				// descriptive.
+				
+				if ([self.filesToTag count] == 1)
+				{
+					NSString *emailSubject = nil;
+					
+					// get selected email subject
+					appleScriptError = nil;
+					NSAppleScript *getEmailSubjectAS = [[NSAppleScript alloc] initWithSource:MAIL_GET_FIRST_SELECTED_EMAIL_SUBJECT_APPLESCRIPT];
+					NSAppleEventDescriptor *ret = [getEmailSubjectAS executeAndReturnError:&appleScriptError];
+					if ([ret stringValue] != nil)
+						emailSubject = [ret stringValue];
+					[getEmailSubjectAS release];
+					
+					if (emailSubject != nil)
+						self.titleArgument = [NSString
+											  stringWithFormat:
+											  @"Email: %@",
+											  emailSubject];
+					else
+						self.titleArgument = @"1 Email";
+				}
+				else
+				{
+					self.titleArgument = [NSString
+										  stringWithFormat:
+										  @"%i Email%@",
+										  [self.filesToTag count],
+										  (([self.filesToTag count] > 1)?@"s":@"")];
+				}
 			}
 		}
 		else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID] ||
