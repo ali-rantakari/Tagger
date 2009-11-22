@@ -836,7 +836,7 @@ doCommandBySelector:(SEL)command
 			{
 				// tagging emails; set appropriate title (the email
 				// filenames used by Mail.app are not exactly very
-				// descriptive.
+				// descriptive).
 				
 				if ([self.filesToTag count] == 1)
 				{
@@ -977,6 +977,16 @@ doCommandBySelector:(SEL)command
 	{
 		NSURL *frontAppDocumentURL = [NSURL URLWithString:frontAppDocumentURLString];
 		[self addFileToTag:[frontAppDocumentURL path]];
+	}
+	
+	
+	if ([kDefaults boolForKey:kDefaultsKey_ShowFrontAppIcon] &&
+		[self.filesToTag count] > 0 &&
+		frontAppBundleID != nil
+		)
+	{
+		NSString *frontAppPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:frontAppBundleID];
+		[appIconImageView setImage:[[NSWorkspace sharedWorkspace] iconForFile:frontAppPath]];
 	}
 	
 	

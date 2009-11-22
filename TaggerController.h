@@ -38,6 +38,7 @@
 	IBOutlet NSWindow *fileListSheet;
 	IBOutlet NSTableView *fileListTable;
 	IBOutlet NSImageView *iconImageView;
+	IBOutlet NSImageView *appIconImageView;
 	IBOutlet NSTextField *infoLabel;
 	IBOutlet NSTextField *filenameLabel;
 	IBOutlet NSTextField *fileCountLabel;

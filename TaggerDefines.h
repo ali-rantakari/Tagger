@@ -23,6 +23,7 @@
 #define kDefaults											[NSUserDefaults standardUserDefaults]
 #define kDefaultsKey_OMSpotlightImporterInstallCheckDone	@"OMSpotlightImporterInstallCheckDone"
 #define kDefaultsKey_SaveChangesOnDoubleReturn				@"saveChangesOnDoubleReturn"
+#define kDefaultsKey_ShowFrontAppIcon						@"showFrontAppIcon"
 
 #ifdef _DEBUG_TARGET
 #define DEBUG_LEVEL 4
