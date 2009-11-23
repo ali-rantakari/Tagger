@@ -209,6 +209,7 @@ static NSString* frontAppBundleID = nil;
 @synthesize customTitle;
 @synthesize weblocFilesFolderPath;
 @synthesize appDataDirPath;
+@synthesize scriptsDirPath;
 
 
 + (void) load
@@ -285,38 +286,42 @@ static NSString* frontAppBundleID = nil;
 	
 	DDLogInfo(@"self.weblocFilesFolderPath = %@", self.weblocFilesFolderPath);
 	
-	BOOL isDir = NO;
-	BOOL dirExists = [[NSFileManager defaultManager] fileExistsAtPath:self.weblocFilesFolderPath isDirectory:&isDir];
-	if (dirExists && !isDir)
+	BOOL weblocDirIsDir = NO;
+	BOOL weblocDirExists = [[NSFileManager defaultManager]
+							fileExistsAtPath:self.weblocFilesFolderPath
+							isDirectory:&weblocDirIsDir];
+	if (weblocDirExists && !weblocDirIsDir)
 	{
-		NSLog(@"ERROR: a file exists in the app data directory's webloc folder location: %@", self.weblocFilesFolderPath);
+		NSLog(@"ERROR: a file exists where the webloc storage folder should be: %@", self.weblocFilesFolderPath);
 		[[NSAlert
-		 alertWithMessageText:@"Error in Application Support Folder"
+		 alertWithMessageText:@"Error in Web Location Storage Folder"
 		 defaultButton:@"Quit"
 		 alternateButton:nil
 		 otherButton:nil
-		 informativeTextWithFormat:@"A file exists where the application's webloc folder should be: %@ Please delete this file and retry.", self.weblocFilesFolderPath
+		 informativeTextWithFormat:@"A file exists where the application's web internet location file storage folder should be: %@ Please move this file to the trash and retry.", self.weblocFilesFolderPath
 		 ] runModal];
 		[self terminateAppSafely];
 	}
-	else if (!dirExists)
+	else if (!weblocDirExists)
 	{
-		NSError *createDirError = nil;
+		NSError *createWeblocDirError = nil;
 		BOOL success = [[NSFileManager defaultManager]
 						createDirectoryAtPath:self.weblocFilesFolderPath
 						withIntermediateDirectories:YES
 						attributes:nil
-						error:&createDirError
+						error:&createWeblocDirError
 						];
-		if (!success || createDirError != nil)
+		if (!success || createWeblocDirError != nil)
 		{
-			NSLog(@"ERROR: could not create app data directory's webloc folder: %@", self.weblocFilesFolderPath);
-			[NSAlert alertWithError:createDirError];
+			NSLog(@"ERROR: could not create webloc folder: %@", self.weblocFilesFolderPath);
+			[NSAlert alertWithError:createWeblocDirError];
 			[self terminateAppSafely];
 		}
 	}
 	
 	
+	// determine & create the scripts folder
+	// 
 	self.appDataDirPath = [[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,
 																NSUserDomainMask,
 																YES
@@ -324,6 +329,41 @@ static NSString* frontAppBundleID = nil;
 						   stringByAppendingPathComponent:[[NSProcessInfo processInfo]
 														   processName]
 						   ];
+	self.scriptsDirPath = [self.appDataDirPath stringByAppendingPathComponent:@"Scripts"];
+	
+	BOOL scriptsDirIsDir = NO;
+	BOOL scriptsDirExists = [[NSFileManager defaultManager]
+							 fileExistsAtPath:self.scriptsDirPath
+							 isDirectory:&scriptsDirIsDir];
+	if (scriptsDirExists && !scriptsDirIsDir)
+	{
+		NSLog(@"ERROR: a file exists in the app data directory's scripts folder location: %@", self.scriptsDirPath);
+		[[NSAlert
+		  alertWithMessageText:@"Error in Application Support Scripts Folder"
+		  defaultButton:@"Quit"
+		  alternateButton:nil
+		  otherButton:nil
+		  informativeTextWithFormat:@"A file exists where the application's scripts folder should be: %@ Please move this file to the trash and retry.", self.scriptsDirPath
+		  ] runModal];
+		[self terminateAppSafely];
+	}
+	else if (!scriptsDirExists)
+	{
+		NSError *createScriptsDirError = nil;
+		BOOL success = [[NSFileManager defaultManager]
+						createDirectoryAtPath:self.scriptsDirPath
+						withIntermediateDirectories:YES
+						attributes:nil
+						error:&createScriptsDirError
+						];
+		if (!success || createScriptsDirError != nil)
+		{
+			NSLog(@"ERROR: could not create app data directory's scripts folder: %@", self.scriptsDirPath);
+			[NSAlert alertWithError:createScriptsDirError];
+			[self terminateAppSafely];
+		}
+	}
+	
 	
 	
 	[kDefaults
