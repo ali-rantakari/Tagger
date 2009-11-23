@@ -1387,8 +1387,9 @@ doCommandBySelector:(SEL)command
 }
 
 
-// NSApplication delegate method: receive file to open (drag & drop or dbl-click if set as handler for a
-// file type.) Gets called once for each file if several "opened" at once
+// NSApplication delegate method: receive file to open (drag & drop or
+// dbl-click if set as handler for a file type.) Gets called once for
+// each file if several "opened" at once
 - (BOOL) application:(NSApplication *)anApplication
 			openFile:(NSString *)aFileName
 {
@@ -1431,8 +1432,11 @@ doCommandBySelector:(SEL)command
 		frontAppBundleID != nil
 		)
 	{
-		NSString *frontAppPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:frontAppBundleID];
-		[appIconImageView setImage:[[NSWorkspace sharedWorkspace] iconForFile:frontAppPath]];
+		NSString *frontAppPath = [[NSWorkspace sharedWorkspace]
+								  absolutePathForAppBundleWithIdentifier:
+								  frontAppBundleID];
+		[appIconImageView setImage:[[NSWorkspace sharedWorkspace]
+									iconForFile:frontAppPath]];
 	}
 	
 	
@@ -1605,9 +1609,7 @@ doCommandBySelector:(SEL)command
 	NSPasteboard *pboard = [sender draggingPasteboard];
 	NSDragOperation sourceDragMask = [sender draggingSourceOperationMask];
 	
-	DDLogInfo(@"draggingEntered.");
-	
-	if ( [[pboard types] containsObject:NSFilenamesPboardType] )
+	if ([[pboard types] containsObject:NSFilenamesPboardType])
 	{
 		if (sourceDragMask & NSDragOperationCopy)
 			return NSDragOperationCopy;
@@ -1621,23 +1623,16 @@ doCommandBySelector:(SEL)command
 {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 	
-	DDLogInfo(@"prepareForDragOperation.");
+	if (![[pboard types] containsObject:NSFilenamesPboardType])
+		return NO;
 	
-	if ([[pboard types] containsObject:NSFilenamesPboardType])
+	NSArray *filePaths = [pboard propertyListForType:NSFilenamesPboardType];
+	for (NSString *thisFilePath in filePaths)
 	{
-		if ([[pboard types] containsObject:NSFilenamesPboardType])
-		{
-			NSArray *filePaths = [pboard propertyListForType:NSFilenamesPboardType];
-			for (NSString *thisFilePath in filePaths)
-			{
-				if (![thisFilePath hasSuffix:@".scpt"])
-					return NO;
-			}
-			return YES;
-		}
+		if (![thisFilePath hasSuffix:@".scpt"])
+			return NO;
 	}
-	
-	return NO;
+	return YES;
 }
 
 
@@ -1645,16 +1640,16 @@ doCommandBySelector:(SEL)command
 {
 	NSPasteboard *pboard = [sender draggingPasteboard];
 	
-	if ([[pboard types] containsObject:NSFilenamesPboardType])
+	if (![[pboard types] containsObject:NSFilenamesPboardType])
+		return NO;
+	
+	NSArray *filePaths = [pboard propertyListForType:NSFilenamesPboardType];
+	NSString *thisFilePath = [filePaths objectAtIndex:0];
+	if ([thisFilePath hasSuffix:@".scpt"])
 	{
-		NSArray *filePaths = [pboard propertyListForType:NSFilenamesPboardType];
-		NSString *thisFilePath = [filePaths objectAtIndex:0];
-		if ([thisFilePath hasSuffix:@".scpt"])
-		{
-			[self suggestAddFrontAppScript:thisFilePath];
-			[NSApp activateIgnoringOtherApps:YES];
-			return YES;
-		}
+		[self suggestAddFrontAppScript:thisFilePath];
+		[NSApp activateIgnoringOtherApps:YES];
+		return YES;
 	}
 	
 	return NO;
