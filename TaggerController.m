@@ -203,6 +203,7 @@ static NSString* frontAppBundleID = nil;
 @synthesize appDataDirPath;
 @synthesize scriptsDirPath;
 @synthesize scriptsCatalog;
+@synthesize addedScriptPath;
 
 
 + (void) load
@@ -389,6 +390,11 @@ static NSString* frontAppBundleID = nil;
 	self.originalTags = nil;
 	self.customTitle = nil;
 	self.versionCheckConnection = nil;
+	self.weblocFilesFolderPath = nil;
+	self.appDataDirPath = nil;
+	self.scriptsDirPath = nil;
+	self.scriptsCatalog = nil;
+	self.addedScriptPath = nil;
 	
 	if (frontAppBundleID != nil)
 		[frontAppBundleID release];
@@ -416,6 +422,9 @@ static NSString* frontAppBundleID = nil;
 	[mainWindow center];
 	[aboutWindowVersionLabel setStringValue:[NSString stringWithFormat:@"Version %@", [self getVersionString]]];
 	[self checkForUpdates];
+	
+	// register window for drag & drop operations
+	[mainWindow registerForDraggedTypes:[NSArray arrayWithObject:NSFilenamesPboardType]];
 }
 
 
@@ -444,6 +453,24 @@ static NSString* frontAppBundleID = nil;
 {
 	[fileListSheet orderOut:nil];
 	[NSApp endSheet:fileListSheet];
+}
+
+
+- (void) showAddScriptDialog
+{
+	[NSApp
+	 beginSheet:addScriptSheet
+	 modalForWindow:mainWindow
+	 modalDelegate:self
+	 didEndSelector:NULL
+	 contextInfo:nil
+	 ];
+}
+
+- (void) closeAddScriptDialog
+{
+	[addScriptSheet orderOut:nil];
+	[NSApp endSheet:addScriptSheet];
 }
 
 
@@ -532,13 +559,22 @@ static NSString* frontAppBundleID = nil;
 	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
 		return;
 	
+	[self ensureScriptsCatalogFileExists];
+}
+
+
+
+
+
+- (void) ensureScriptsCatalogFileExists
+{
 	// create the catalog file if it doesn't exist
 	NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
 	
 	BOOL catalogFileIsDir = NO;
 	BOOL catalogFileExists = [[NSFileManager defaultManager]
-							 fileExistsAtPath:catalogFilePath
-							 isDirectory:&catalogFileIsDir];
+							  fileExistsAtPath:catalogFilePath
+							  isDirectory:&catalogFileIsDir];
 	if (catalogFileExists && catalogFileIsDir)
 	{
 		NSLog(@"ERROR: a folder exists in the app data directory's scripts catalog file location: %@", catalogFilePath);
@@ -568,6 +604,136 @@ static NSString* frontAppBundleID = nil;
 		}
 	}
 }
+
+
+
+
+- (void) suggestAddFrontAppScript:(NSString *)filePath
+{
+	self.addedScriptPath = filePath;
+	
+	NSString *fileName = [filePath lastPathComponent];
+	[scriptFilenameField setStringValue:fileName];
+	
+	NSString *guessedAppID = nil;
+	NSString *appPath = [[NSWorkspace sharedWorkspace] fullPathForApplication:[fileName stringByDeletingPathExtension]];
+	
+	if (appPath != nil)
+	{
+		NSString *appInfoPlistPath = [appPath stringByAppendingPathComponent:@"Contents/Info.plist"];
+		NSDictionary *infoDict = [NSDictionary dictionaryWithContentsOfFile:appInfoPlistPath];
+		if (infoDict != nil)
+		{
+			NSString *identifier = [infoDict objectForKey:(NSString *)kCFBundleIdentifierKey];
+			if (identifier != nil)
+				guessedAppID = identifier;
+		}
+	}
+	
+	if (guessedAppID != nil)
+		[appIDField setStringValue:guessedAppID];
+	
+	[self showAddScriptDialog];
+}
+
+- (IBAction) addScriptSheetSubmit:(id)sender
+{
+	// enable the feature
+	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
+		[kDefaults setBool:YES forKey:kDefaultsKey_UserFrontAppScriptsEnabled];
+	
+	[self ensureScriptsCatalogFileExists];
+	
+	NSString *appID = [appIDField stringValue];
+	NSString *appPath = nil;
+	NSString *errMsg = nil;
+	
+	if (appID == nil || [appID length] == 0)
+		errMsg = @"No application identifier specified";
+	
+	if (errMsg == nil)
+	{
+		appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appID];
+		if (appPath == nil)
+			errMsg = [NSString
+					  stringWithFormat:
+					  @"Can not find any application on this system matching the identifier: %@",
+					  appID];
+	}
+	
+	if (errMsg != nil)
+	{
+		NSRunAlertPanel(@"Error with Application Identifier", errMsg, @"OK", nil, nil);
+		return;
+	}
+	
+	
+	// copy script into Scripts folder
+	NSString *fileName = [self.addedScriptPath lastPathComponent];
+	NSString *newPath = [self.scriptsDirPath stringByAppendingPathComponent:fileName];
+	if ([[NSFileManager defaultManager] fileExistsAtPath:newPath])
+	{
+		NSRunAlertPanel(@"Script already exists",
+						[NSString
+						 stringWithFormat:
+						 @"There already is a script file named \"%@\" in your Front Application Scripts folder. The existing file has not been replaced. If you wish to replace it, please manually delete or rename the existing script and try again.",
+						 fileName],
+						@"OK",
+						nil,
+						nil);
+		[self closeAddScriptDialog];
+		return;
+	}
+	
+	NSError *copyError = nil;
+	[[NSFileManager defaultManager]
+	 copyItemAtPath:self.addedScriptPath
+	 toPath:newPath
+	 error:&copyError];
+	
+	if (copyError != nil)
+	{
+		NSRunAlertPanel(@"Error copying script",
+						[NSString
+						 stringWithFormat:
+						 @"There was an error while copying the script \"%@\" into the Front Application Scripts folder: %@",
+						 fileName, [copyError localizedDescription]],
+						@"OK",
+						nil,
+						nil);
+		[self closeAddScriptDialog];
+		return;
+	}
+	
+	NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	[catalog setObject:fileName forKey:appID];
+	[catalog writeToFile:catalogFilePath atomically:YES];
+	self.scriptsCatalog = catalog;
+	
+	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
+	NSRunInformationalAlertPanel(@"Script Added",
+								 [NSString
+								  stringWithFormat:
+								  @"The Front Application Script \"%@\" has successfully been added for application %@.",
+								  fileName, appName],
+								 @"OK",
+								 nil,
+								 nil);
+	
+	[self closeAddScriptDialog];
+}
+
+- (IBAction) addScriptSheetCancel:(id)sender
+{
+	[self closeAddScriptDialog];
+}
+
+
+
+
+
+
 
 
 
@@ -1377,6 +1543,76 @@ doCommandBySelector:(SEL)command
 		[appIconImageView setHidden:NO];
 	
 	[progressIndicator stopAnimation:self];
+}
+
+
+
+
+
+
+
+
+
+# pragma mark -- window drag & drop
+
+- (NSDragOperation) draggingEntered:(id <NSDraggingInfo>)sender
+{
+	NSPasteboard *pboard = [sender draggingPasteboard];
+	NSDragOperation sourceDragMask = [sender draggingSourceOperationMask];
+	
+	DDLogInfo(@"draggingEntered.");
+	
+	if ( [[pboard types] containsObject:NSFilenamesPboardType] )
+	{
+		if (sourceDragMask & NSDragOperationCopy)
+			return NSDragOperationCopy;
+	}
+	
+	return NSDragOperationNone;
+}
+
+
+- (BOOL) prepareForDragOperation:(id < NSDraggingInfo >)sender
+{
+	NSPasteboard *pboard = [sender draggingPasteboard];
+	
+	DDLogInfo(@"prepareForDragOperation.");
+	
+	if ([[pboard types] containsObject:NSFilenamesPboardType])
+	{
+		if ([[pboard types] containsObject:NSFilenamesPboardType])
+		{
+			NSArray *filePaths = [pboard propertyListForType:NSFilenamesPboardType];
+			for (NSString *thisFilePath in filePaths)
+			{
+				if (![thisFilePath hasSuffix:@".scpt"])
+					return NO;
+			}
+			return YES;
+		}
+	}
+	
+	return NO;
+}
+
+
+- (BOOL) performDragOperation:(id < NSDraggingInfo >)sender
+{
+	NSPasteboard *pboard = [sender draggingPasteboard];
+	
+	if ([[pboard types] containsObject:NSFilenamesPboardType])
+	{
+		NSArray *filePaths = [pboard propertyListForType:NSFilenamesPboardType];
+		NSString *thisFilePath = [filePaths objectAtIndex:0];
+		if ([thisFilePath hasSuffix:@".scpt"])
+		{
+			[self suggestAddFrontAppScript:thisFilePath];
+			[NSApp activateIgnoringOtherApps:NO];
+			return YES;
+		}
+	}
+	
+	return NO;
 }
 
 

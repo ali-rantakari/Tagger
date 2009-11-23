@@ -34,7 +34,6 @@
 	IBOutlet NSWindow *mainWindow;
 	IBOutlet NSWindow *aboutWindow;
 	IBOutlet NSWindow *preferencesWindow;
-	IBOutlet NSWindow *installSpotlightSupportSheet;
 	IBOutlet NSWindow *fileListSheet;
 	IBOutlet NSTableView *fileListTable;
 	IBOutlet NSImageView *iconImageView;
@@ -47,6 +46,9 @@
 	IBOutlet NSTokenField *tagsField;
 	IBOutlet NSProgressIndicator *progressIndicator;
 	IBOutlet NSTextField *aboutWindowVersionLabel;
+	IBOutlet NSWindow *addScriptSheet;
+	IBOutlet NSTextField *appIDField;
+	IBOutlet NSTextField *scriptFilenameField;
 	
 	BOOL setTagsAndQuitCalled;
 	
@@ -60,6 +62,8 @@
 	NSString *scriptsDirPath;
 	
 	NSDictionary *scriptsCatalog;
+	
+	NSString *addedScriptPath;
 }
 
 @property(retain) NSMutableArray *filesToTag;
@@ -70,11 +74,14 @@
 @property(copy) NSString *appDataDirPath;
 @property(copy) NSString *scriptsDirPath;
 @property(copy) NSDictionary *scriptsCatalog;
+@property(copy) NSString *addedScriptPath;
 
 
 - (NSString *) getVersionString;
 
 - (void) addFileToTag:(NSString *)aFilePath;
+
+- (void) ensureScriptsCatalogFileExists;
 
 - (NSString *) getWeblocFilePathForTitle:(NSString *)title URL:(NSString *)url;
 
@@ -89,6 +96,9 @@
 - (IBAction) readAboutFrontAppScriptsSelected:(id)sender;
 - (IBAction) revealScriptsFolderSelected:(id)sender;
 - (IBAction) frontAppScriptsPrefToggled:(id)sender;
+
+- (IBAction) addScriptSheetSubmit:(id)sender;
+- (IBAction) addScriptSheetCancel:(id)sender;
 
 - (void) setTagsAndQuit;
 - (void) setFileIconToView:(NSString *)pathToFile;
