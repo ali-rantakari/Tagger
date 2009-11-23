@@ -1410,6 +1410,8 @@ doCommandBySelector:(SEL)command
 	DDLogInfo(@"applicationDidFinishLaunching");
 	DDLogInfo(@"frontAppBundleID = %@", frontAppBundleID);
 	
+	BOOL filesToTagAreFromFrontApp = ([self.filesToTag count] == 0);
+	
 	[progressIndicator startAnimation:self];
 	
 	if (frontAppBundleID != nil)
@@ -1429,6 +1431,7 @@ doCommandBySelector:(SEL)command
 	
 	if ([kDefaults boolForKey:kDefaultsKey_ShowFrontAppIcon] &&
 		[self.filesToTag count] > 0 &&
+		filesToTagAreFromFrontApp &&
 		frontAppBundleID != nil
 		)
 	{
