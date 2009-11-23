@@ -25,6 +25,16 @@
 #define kDefaultsKey_ShowFrontAppIcon						@"showFrontAppIcon"
 #define kDefaultsKey_UserFrontAppScriptsEnabled				@"userFrontAppScriptsEnabled"
 
+#define kAppSiteURL				@"http://hasseg.org/tagger/"
+#define kAppSiteURLPrefix		kAppSiteURL
+#define kFrontAppScriptsInfoURL	[kAppSiteURL stringByAppendingString:@"frontAppScripts.html"]
+#define kVersionCheckURL		[NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
+
+#define SCRIPTS_CATALOG_FILENAME @"Catalog.plist"
+
+// name of the folder where we save the .webloc files
+// that we create for tagging web pages
+#define WEBLOCS_FOLDER_NAME @"Web Links"
 
 
 #ifndef keyASUserRecordFields

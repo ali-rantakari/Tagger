@@ -86,6 +86,9 @@
 - (IBAction) showFileListSelected:(id)sender;
 - (IBAction) closeFileListSelected:(id)sender;
 - (IBAction) goToWebsiteSelected:(id)sender;
+- (IBAction) readAboutFrontAppScriptsSelected:(id)sender;
+- (IBAction) revealScriptsFolderSelected:(id)sender;
+- (IBAction) frontAppScriptsPrefToggled:(id)sender;
 
 - (void) setTagsAndQuit;
 - (void) setFileIconToView:(NSString *)pathToFile;

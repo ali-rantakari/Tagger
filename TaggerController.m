@@ -42,10 +42,6 @@
 #import "HGVersionNumberCompare.h"
 
 
-#define kAppSiteURL			@"http://hasseg.org/tagger/"
-#define kAppSiteURLPrefix	kAppSiteURL
-#define kVersionCheckURL	[NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
-
 #define FINDER_BUNDLE_ID		@"com.apple.finder"
 #define MAIL_BUNDLE_ID			@"com.apple.mail"
 #define SAFARI_BUNDLE_ID		@"com.apple.Safari"
@@ -53,12 +49,6 @@
 #define CAMINO_BUNDLE_ID		@"org.mozilla.camino"
 #define OPERA_BUNDLE_ID			@"com.operasoftware.Opera"
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
-
-// name of the folder where we save the .webloc files
-// that we create for tagging web pages
-#define WEBLOCS_FOLDER_NAME @"Web Links"
-
-#define SCRIPTS_CATALOG_FILENAME @"Catalog.plist"
 
 #define GET_SELECTED_FINDER_ITEMS_APPLESCRIPT	\
 	@"tell application \"Finder\"\n\
@@ -522,6 +512,62 @@ static NSString* frontAppBundleID = nil;
 	 ];
 }
 
+- (IBAction) readAboutFrontAppScriptsSelected:(id)sender
+{
+	[[NSWorkspace sharedWorkspace]
+	 openURL:[NSURL URLWithString:kFrontAppScriptsInfoURL]
+	 ];
+}
+
+- (IBAction) revealScriptsFolderSelected:(id)sender
+{
+	[[NSWorkspace sharedWorkspace]
+	 selectFile:nil
+	 inFileViewerRootedAtPath:self.scriptsDirPath
+	 ];
+}
+
+- (IBAction) frontAppScriptsPrefToggled:(id)sender
+{
+	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
+		return;
+	
+	// create the catalog file if it doesn't exist
+	NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+	
+	BOOL catalogFileIsDir = NO;
+	BOOL catalogFileExists = [[NSFileManager defaultManager]
+							 fileExistsAtPath:catalogFilePath
+							 isDirectory:&catalogFileIsDir];
+	if (catalogFileExists && catalogFileIsDir)
+	{
+		NSLog(@"ERROR: a folder exists in the app data directory's scripts catalog file location: %@", catalogFilePath);
+		[[NSAlert
+		  alertWithMessageText:@"Error Creating Front App Scripts Catalog File"
+		  defaultButton:@"OK"
+		  alternateButton:nil
+		  otherButton:nil
+		  informativeTextWithFormat:@"A folder exists where the application's scripts catalog file should be: %@ Please move this folder to the trash and retry.", catalogFilePath
+		  ] runModal];
+	}
+	else if (!catalogFileExists)
+	{
+		NSDictionary *emptyDict = [NSDictionary dictionary];
+		BOOL success = [emptyDict writeToFile:catalogFilePath atomically:YES];
+		
+		if (!success)
+		{
+			NSLog(@"ERROR: could not create app data directory's scripts folder catalog file: %@", catalogFilePath);
+			[[NSAlert
+			  alertWithMessageText:@"Error Creating Front App Scripts Catalog File"
+			  defaultButton:@"OK"
+			  alternateButton:nil
+			  otherButton:nil
+			  informativeTextWithFormat:@"Could not write catalog file: %@", catalogFilePath
+			  ] runModal];
+		}
+	}
+}
 
 
 
