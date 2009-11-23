@@ -206,8 +206,9 @@ static NSString* frontAppBundleID = nil;
 @synthesize filesToTag;
 @synthesize originalTags;
 @synthesize versionCheckConnection;
-@synthesize titleArgument;
+@synthesize customTitle;
 @synthesize weblocFilesFolderPath;
+@synthesize appDataDirPath;
 
 
 + (void) load
@@ -242,7 +243,7 @@ static NSString* frontAppBundleID = nil;
 		return nil;
 	
 	self.filesToTag = [NSMutableArray array];
-	self.titleArgument = nil;
+	self.customTitle = nil;
 	
 	@try
 	{
@@ -261,7 +262,7 @@ static NSString* frontAppBundleID = nil;
 		
 		NSString *titleArg = [[NSUserDefaults standardUserDefaults] stringForKey:@"t"];
 		if (titleArg != nil)
-			self.titleArgument = titleArg;
+			self.customTitle = titleArg;
 	}
 	@catch(id exception)
 	{
@@ -316,6 +317,24 @@ static NSString* frontAppBundleID = nil;
 	}
 	
 	
+	self.appDataDirPath = [[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,
+																NSUserDomainMask,
+																YES
+																) objectAtIndex:0] 
+						   stringByAppendingPathComponent:[[NSProcessInfo processInfo]
+														   processName]
+						   ];
+	
+	
+	[kDefaults
+	 registerDefaults:
+	 [NSDictionary
+	  dictionaryWithObjectsAndKeys:
+	  [NSNumber numberWithBool:YES], kDefaultsKey_ShowFrontAppIcon,
+	  [NSNumber numberWithBool:NO], kDefaultsKey_SaveChangesOnDoubleReturn,
+	  nil]];
+	
+	
 	return self;
 }
 
@@ -323,7 +342,7 @@ static NSString* frontAppBundleID = nil;
 {
 	self.filesToTag = nil;
 	self.originalTags = nil;
-	self.titleArgument = nil;
+	self.customTitle = nil;
 	self.versionCheckConnection = nil;
 	
 	if (frontAppBundleID != nil)
@@ -727,6 +746,225 @@ doCommandBySelector:(SEL)command
 
 
 
+
+- (void) getFilesFromFrontApp
+{
+	if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID] ||
+		[frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
+	{
+		// try to get the selected files in Finder or Path Finder via AppleScript
+		NSDictionary *appleScriptError = nil;
+		NSString *getItemsASSource = nil;
+		if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID])
+			getItemsASSource = GET_SELECTED_FINDER_ITEMS_APPLESCRIPT;
+		else if ([frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
+			getItemsASSource = GET_SELECTED_PATH_FINDER_ITEMS_APPLESCRIPT;
+		
+		if (getItemsASSource != nil)
+		{
+			NSAppleScript *getFinderSelectionAS = [[NSAppleScript alloc] initWithSource:getItemsASSource];
+			NSAppleEventDescriptor *ret = [getFinderSelectionAS executeAndReturnError:&appleScriptError];
+			
+			if ([ret stringValue] != nil)
+			{
+				NSArray *separatedPaths = [[[ret stringValue]
+											stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
+											] componentsSeparatedByString:@"\n"
+										   ];
+				NSString *thisPath;
+				for (thisPath in separatedPaths)
+				{
+					[self addFileToTag:thisPath];
+				}
+			}
+			
+			[getFinderSelectionAS release];
+		}
+	}
+	else if ([frontAppBundleID isEqualToString:MAIL_BUNDLE_ID])
+	{
+		// try to get the selected email files in Mail.app
+		NSDictionary *appleScriptError = nil;
+		NSString *getEmailFilesASSource = MAIL_GET_SELECTED_EMAILS_APPLESCRIPT;
+		
+		if (getEmailFilesASSource != nil)
+		{
+			NSAppleScript *getEmailFilesAS = [[NSAppleScript alloc] initWithSource:getEmailFilesASSource];
+			NSAppleEventDescriptor *ret = [getEmailFilesAS executeAndReturnError:&appleScriptError];
+			
+			if ([ret stringValue] != nil)
+			{
+				if ([[ret stringValue] isEqualToString:@"error"])
+				{
+					NSRunAlertPanel(@"Error Tagging Emails from Mail.app",
+									@"Could not find all the files for the selected email messages. This could simply mean that not all messages have been fully downloaded by Mail. Please try again after Mail is done downloading the messages.",
+									@"OK",
+									nil,
+									nil);
+				}
+				else
+				{
+					NSArray *separatedPaths = [[[ret stringValue]
+												stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
+												] componentsSeparatedByString:@"\n"
+											   ];
+					NSString *thisPath;
+					for (thisPath in separatedPaths)
+					{
+						[self addFileToTag:thisPath];
+					}
+				}
+			}
+			
+			[getEmailFilesAS release];
+		}
+		
+		if ([self.filesToTag count] > 0)
+		{
+			// tagging emails; set appropriate title (the email
+			// filenames used by Mail.app are not exactly very
+			// descriptive).
+			
+			if ([self.filesToTag count] == 1)
+			{
+				NSString *emailSubject = nil;
+				
+				// get selected email subject
+				appleScriptError = nil;
+				NSAppleScript *getEmailSubjectAS = [[NSAppleScript alloc] initWithSource:MAIL_GET_FIRST_SELECTED_EMAIL_SUBJECT_APPLESCRIPT];
+				NSAppleEventDescriptor *ret = [getEmailSubjectAS executeAndReturnError:&appleScriptError];
+				if ([ret stringValue] != nil)
+					emailSubject = [ret stringValue];
+				[getEmailSubjectAS release];
+				
+				if (emailSubject != nil)
+					self.customTitle = [NSString
+										stringWithFormat:
+										@"Email: %@",
+										emailSubject];
+				else
+					self.customTitle = @"1 Email";
+			}
+			else
+			{
+				self.customTitle = [NSString
+									stringWithFormat:
+									@"%i Email%@",
+									[self.filesToTag count],
+									(([self.filesToTag count] > 1)?@"s":@"")];
+			}
+		}
+	}
+	else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID] ||
+			 [frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID] ||
+			 [frontAppBundleID isEqualToString:OPERA_BUNDLE_ID] ||
+			 [frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID] 
+			 )
+	{
+		// try to get the current page's title and URL from Safari via AppleScript
+		NSDictionary *appleScriptError = nil;
+		
+		NSString *getPageTitleASSource = nil;
+		NSString *getPageURLASSource = nil;
+		if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID])
+		{
+			getPageTitleASSource = GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT;
+			getPageURLASSource = GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT;
+		}
+		else if ([frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID])
+		{
+			getPageTitleASSource = GET_CURRENT_FIREFOX_PAGE_TITLE_APPLESCRIPT;
+			getPageURLASSource = GET_CURRENT_FIREFOX_PAGE_URL_APPLESCRIPT;
+		}
+		else if ([frontAppBundleID isEqualToString:OPERA_BUNDLE_ID])
+		{
+			getPageTitleASSource = GET_CURRENT_OPERA_PAGE_TITLE_APPLESCRIPT;
+			getPageURLASSource = GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT;
+		}
+		else if ([frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID])
+		{
+			getPageTitleASSource = GET_CURRENT_CAMINO_PAGE_TITLE_APPLESCRIPT;
+			getPageURLASSource = GET_CURRENT_CAMINO_PAGE_URL_APPLESCRIPT;
+		}
+		
+		NSAppleScript *getPageTitleAS = [[NSAppleScript alloc] initWithSource:getPageTitleASSource];
+		NSAppleEventDescriptor *getPageTitleASOutput = [getPageTitleAS executeAndReturnError:&appleScriptError];
+		[getPageTitleAS release];
+		
+		if ([getPageTitleASOutput stringValue] == nil)
+		{
+			NSLog(@"ERROR: Could not get page title from browser.");
+			if (appleScriptError != nil)
+				NSLog(@" AS error: %@", appleScriptError);
+			
+			NSString *errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org";
+			if ([frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID])
+				errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nNOTE: Firefox has had bugs related to AppleScript that might be causing this problem -- known workarounds are to make sure that the frontmost window is a regular browser window and if that doesn't help, to restart Firefox and try again. You can send a bug report to the author at the following web page (and remember to attach your system log with the message) but this is probably a bug in Firefox, not Tagger.\n\nhttp://hasseg.org";
+			[[NSAlert
+			  alertWithMessageText:@"Error tagging web page"
+			  defaultButton:@"Quit"
+			  alternateButton:nil
+			  otherButton:nil
+			  informativeTextWithFormat:errorMsg
+			  ] runModal];
+			[self terminateAppSafely];
+		}
+		else
+		{
+			NSAppleScript *getPageURLAS = [[NSAppleScript alloc] initWithSource:getPageURLASSource];
+			NSAppleEventDescriptor *getPageURLASOutput = [getPageURLAS executeAndReturnError:&appleScriptError];
+			[getPageURLAS release];
+			
+			if ([getPageURLASOutput stringValue] == nil)
+			{
+				NSLog(@"ERROR: Could not get page URL from browser.");
+				if (appleScriptError != nil)
+					NSLog(@" AS error: %@", appleScriptError);
+				[[NSAlert
+				  alertWithMessageText:@"Error tagging web page"
+				  defaultButton:@"Quit"
+				  alternateButton:nil
+				  otherButton:nil
+				  informativeTextWithFormat:
+				  @"Apologies -- there was an error when trying to tag this web page (could not get page URL from browser).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
+				  ] runModal];
+				[self terminateAppSafely];
+			}
+			else if (![[getPageURLASOutput stringValue] hasPrefix:@"topsites://"] &&
+					 ![[getPageURLASOutput stringValue] hasPrefix:@"about:"] &&
+					 ([[[getPageURLASOutput stringValue]
+						stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
+						] length] > 0)
+					 )
+			{
+				DDLogInfo(@"title = %@", [getPageTitleASOutput stringValue]);
+				DDLogInfo(@"url = %@", [getPageURLASOutput stringValue]);
+				
+				NSString *weblocFilePath = [self
+											getWeblocFilePathForTitle:[getPageTitleASOutput stringValue]
+											URL:[getPageURLASOutput stringValue]
+											];
+				if (weblocFilePath != nil)
+				{
+					[self addFileToTag:weblocFilePath];
+					
+					NSString *weblocFileName = [weblocFilePath lastPathComponent];
+					NSRange dotRange = [weblocFileName rangeOfString:@"." options:NSBackwardsSearch];
+					if (dotRange.location != NSNotFound)
+						self.customTitle = [weblocFileName substringToIndex:dotRange.location];
+					else
+						self.customTitle = weblocFileName;
+				}
+			}
+		}
+	}
+}
+
+
+
+
+
+
 // NSWindow delegate method: terminate app when window closes
 - (void) windowWillClose:(NSNotification *)notification
 {
@@ -761,224 +999,13 @@ doCommandBySelector:(SEL)command
 	[progressIndicator startAnimation:self];
 	
 	if ([self.filesToTag count] == 0 && frontAppBundleID != nil)
-	{
-		if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID] ||
-			[frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
-		{
-			// try to get the selected files in Finder or Path Finder via AppleScript
-			NSDictionary *appleScriptError = nil;
-			NSString *getItemsASSource = nil;
-			if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID])
-				getItemsASSource = GET_SELECTED_FINDER_ITEMS_APPLESCRIPT;
-			else if ([frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
-				getItemsASSource = GET_SELECTED_PATH_FINDER_ITEMS_APPLESCRIPT;
-			
-			if (getItemsASSource != nil)
-			{
-				NSAppleScript *getFinderSelectionAS = [[NSAppleScript alloc] initWithSource:getItemsASSource];
-				NSAppleEventDescriptor *ret = [getFinderSelectionAS executeAndReturnError:&appleScriptError];
-				
-				if ([ret stringValue] != nil)
-				{
-					NSArray *separatedPaths = [[[ret stringValue]
-												stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
-												] componentsSeparatedByString:@"\n"
-											   ];
-					NSString *thisPath;
-					for (thisPath in separatedPaths)
-					{
-						[self addFileToTag:thisPath];
-					}
-				}
-				
-				[getFinderSelectionAS release];
-			}
-		}
-		else if ([frontAppBundleID isEqualToString:MAIL_BUNDLE_ID])
-		{
-			// try to get the selected email files in Mail.app
-			NSDictionary *appleScriptError = nil;
-			NSString *getEmailFilesASSource = MAIL_GET_SELECTED_EMAILS_APPLESCRIPT;
-			
-			if (getEmailFilesASSource != nil)
-			{
-				NSAppleScript *getEmailFilesAS = [[NSAppleScript alloc] initWithSource:getEmailFilesASSource];
-				NSAppleEventDescriptor *ret = [getEmailFilesAS executeAndReturnError:&appleScriptError];
-				
-				if ([ret stringValue] != nil)
-				{
-					if ([[ret stringValue] isEqualToString:@"error"])
-					{
-						NSRunAlertPanel(@"Error Tagging Emails from Mail.app",
-										@"Could not find all the files for the selected email messages. This could simply mean that not all messages have been fully downloaded by Mail. Please try again after Mail is done downloading the messages.",
-										@"OK",
-										nil,
-										nil);
-					}
-					else
-					{
-						NSArray *separatedPaths = [[[ret stringValue]
-													stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
-													] componentsSeparatedByString:@"\n"
-												   ];
-						NSString *thisPath;
-						for (thisPath in separatedPaths)
-						{
-							[self addFileToTag:thisPath];
-						}
-					}
-				}
-				
-				[getEmailFilesAS release];
-			}
-			
-			if ([self.filesToTag count] > 0)
-			{
-				// tagging emails; set appropriate title (the email
-				// filenames used by Mail.app are not exactly very
-				// descriptive).
-				
-				if ([self.filesToTag count] == 1)
-				{
-					NSString *emailSubject = nil;
-					
-					// get selected email subject
-					appleScriptError = nil;
-					NSAppleScript *getEmailSubjectAS = [[NSAppleScript alloc] initWithSource:MAIL_GET_FIRST_SELECTED_EMAIL_SUBJECT_APPLESCRIPT];
-					NSAppleEventDescriptor *ret = [getEmailSubjectAS executeAndReturnError:&appleScriptError];
-					if ([ret stringValue] != nil)
-						emailSubject = [ret stringValue];
-					[getEmailSubjectAS release];
-					
-					if (emailSubject != nil)
-						self.titleArgument = [NSString
-											  stringWithFormat:
-											  @"Email: %@",
-											  emailSubject];
-					else
-						self.titleArgument = @"1 Email";
-				}
-				else
-				{
-					self.titleArgument = [NSString
-										  stringWithFormat:
-										  @"%i Email%@",
-										  [self.filesToTag count],
-										  (([self.filesToTag count] > 1)?@"s":@"")];
-				}
-			}
-		}
-		else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID] ||
-				 [frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID] ||
-				 [frontAppBundleID isEqualToString:OPERA_BUNDLE_ID] ||
-				 [frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID] 
-				 )
-		{
-			// try to get the current page's title and URL from Safari via AppleScript
-			NSDictionary *appleScriptError = nil;
-			
-			NSString *getPageTitleASSource = nil;
-			NSString *getPageURLASSource = nil;
-			if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID])
-			{
-				getPageTitleASSource = GET_CURRENT_SAFARI_PAGE_TITLE_APPLESCRIPT;
-				getPageURLASSource = GET_CURRENT_SAFARI_PAGE_URL_APPLESCRIPT;
-			}
-			else if ([frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID])
-			{
-				getPageTitleASSource = GET_CURRENT_FIREFOX_PAGE_TITLE_APPLESCRIPT;
-				getPageURLASSource = GET_CURRENT_FIREFOX_PAGE_URL_APPLESCRIPT;
-			}
-			else if ([frontAppBundleID isEqualToString:OPERA_BUNDLE_ID])
-			{
-				getPageTitleASSource = GET_CURRENT_OPERA_PAGE_TITLE_APPLESCRIPT;
-				getPageURLASSource = GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT;
-			}
-			else if ([frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID])
-			{
-				getPageTitleASSource = GET_CURRENT_CAMINO_PAGE_TITLE_APPLESCRIPT;
-				getPageURLASSource = GET_CURRENT_CAMINO_PAGE_URL_APPLESCRIPT;
-			}
-			
-			NSAppleScript *getPageTitleAS = [[NSAppleScript alloc] initWithSource:getPageTitleASSource];
-			NSAppleEventDescriptor *getPageTitleASOutput = [getPageTitleAS executeAndReturnError:&appleScriptError];
-			[getPageTitleAS release];
-			
-			if ([getPageTitleASOutput stringValue] == nil)
-			{
-				NSLog(@"ERROR: Could not get page title from browser.");
-				if (appleScriptError != nil)
-					NSLog(@" AS error: %@", appleScriptError);
-				
-				NSString *errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org";
-				if ([frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID])
-					errorMsg = @"Apologies -- there was an error when trying to tag this web page (could not get page title from browser).\n\nNOTE: Firefox has had bugs related to AppleScript that might be causing this problem -- known workarounds are to make sure that the frontmost window is a regular browser window and if that doesn't help, to restart Firefox and try again. You can send a bug report to the author at the following web page (and remember to attach your system log with the message) but this is probably a bug in Firefox, not Tagger.\n\nhttp://hasseg.org";
-				[[NSAlert
-				 alertWithMessageText:@"Error tagging web page"
-				 defaultButton:@"Quit"
-				 alternateButton:nil
-				 otherButton:nil
-				 informativeTextWithFormat:errorMsg
-				 ] runModal];
-				[self terminateAppSafely];
-			}
-			else
-			{
-				NSAppleScript *getPageURLAS = [[NSAppleScript alloc] initWithSource:getPageURLASSource];
-				NSAppleEventDescriptor *getPageURLASOutput = [getPageURLAS executeAndReturnError:&appleScriptError];
-				[getPageURLAS release];
-				
-				if ([getPageURLASOutput stringValue] == nil)
-				{
-					NSLog(@"ERROR: Could not get page URL from browser.");
-					if (appleScriptError != nil)
-						NSLog(@" AS error: %@", appleScriptError);
-					[[NSAlert
-					 alertWithMessageText:@"Error tagging web page"
-					 defaultButton:@"Quit"
-					 alternateButton:nil
-					 otherButton:nil
-					 informativeTextWithFormat:
-					 @"Apologies -- there was an error when trying to tag this web page (could not get page URL from browser).\n\nPlease send a bug report to the author at the following web page and remember to attach your system log with the message:\n\nhttp://hasseg.org"
-					 ] runModal];
-					[self terminateAppSafely];
-				}
-				else if (![[getPageURLASOutput stringValue] hasPrefix:@"topsites://"] &&
-						 ![[getPageURLASOutput stringValue] hasPrefix:@"about:"] &&
-						 ([[[getPageURLASOutput stringValue]
-							stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]
-							] length] > 0)
-						 )
-				{
-					DDLogInfo(@"title = %@", [getPageTitleASOutput stringValue]);
-					DDLogInfo(@"url = %@", [getPageURLASOutput stringValue]);
-					
-					NSString *weblocFilePath = [self
-												getWeblocFilePathForTitle:[getPageTitleASOutput stringValue]
-												URL:[getPageURLASOutput stringValue]
-												];
-					if (weblocFilePath != nil)
-					{
-						[self addFileToTag:weblocFilePath];
-						
-						NSString *weblocFileName = [weblocFilePath lastPathComponent];
-						NSRange dotRange = [weblocFileName rangeOfString:@"." options:NSBackwardsSearch];
-						if (dotRange.location != NSNotFound)
-							self.titleArgument = [weblocFileName substringToIndex:dotRange.location];
-						else
-							self.titleArgument = weblocFileName;
-					}
-				}
-			}
-		}
-	}
+		[self getFilesFromFrontApp];
 	
 	if ([self.filesToTag count] == 0 && frontAppDocumentURLString != nil)
 	{
 		NSURL *frontAppDocumentURL = [NSURL URLWithString:frontAppDocumentURLString];
 		[self addFileToTag:[frontAppDocumentURL path]];
 	}
-	
 	
 	if ([kDefaults boolForKey:kDefaultsKey_ShowFrontAppIcon] &&
 		[self.filesToTag count] > 0 &&
@@ -1021,8 +1048,8 @@ doCommandBySelector:(SEL)command
 		if ([self.filesToTag count] == 1)
 		{
 			[infoLabel setStringValue:@"Editing tags for:"];
-			if (self.titleArgument != nil)
-				[filenameLabel setStringValue:self.titleArgument];
+			if (self.customTitle != nil)
+				[filenameLabel setStringValue:self.customTitle];
 			else
 				[filenameLabel setStringValue:[[self.filesToTag objectAtIndex:0] lastPathComponent]];
 			
@@ -1048,8 +1075,8 @@ doCommandBySelector:(SEL)command
 		{
 			[infoLabel setStringValue:[NSString stringWithFormat:@"Editing common tags for %d files:", [self.filesToTag count]]];
 			
-			if (self.titleArgument != nil)
-				[filenameLabel setStringValue:self.titleArgument];
+			if (self.customTitle != nil)
+				[filenameLabel setStringValue:self.customTitle];
 			else
 			{
 				// get comma-separated list of all filenames of files to be tagged
@@ -1109,25 +1136,39 @@ doCommandBySelector:(SEL)command
 	BOOL isDir = NO;
 	BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:pathToFile isDirectory:&isDir];
 	
+	NSImage *icon = nil;
+	
 	if (exists)
 	{
 		BOOL isPackage = [[NSWorkspace sharedWorkspace] isFilePackageAtPath:pathToFile];
 		BOOL useIconDecor = (!isDir || isPackage);
 		
-		[iconImageView
-		 setImage:[NSImage
-				   imageWithPreviewOfFileAtPath:pathToFile
-				   ofSize:NSMakeSize(180,180)
-				   asIcon:useIconDecor
-				   ]
-		 ];
+		icon = [NSImage
+				imageWithPreviewOfFileAtPath:pathToFile
+				ofSize:NSMakeSize(180,180)
+				asIcon:useIconDecor
+				];
 	}
 	
-	[progressIndicator stopAnimation:self];
+	[self
+	 performSelectorOnMainThread:@selector(fileIconDoneHandler:)
+	 withObject:icon
+	 waitUntilDone:NO
+	 ];
+	
 	[setIconThreadAutoReleasePool drain];
 }
 
 
+- (void) fileIconDoneHandler:(NSImage *)image
+{
+	if (image != nil)
+	{
+		[iconImageView setImage:image];
+		[appIconImageView setHidden:NO];
+	}
+	[progressIndicator stopAnimation:self];
+}
 
 
 

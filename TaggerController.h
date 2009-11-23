@@ -53,15 +53,18 @@
 	NSMutableArray *filesToTag;
 	NSArray *originalTags;
 	NSURLConnection *versionCheckConnection;
-	NSString *titleArgument;
+	NSString *customTitle;
+	
 	NSString *weblocFilesFolderPath;
+	NSString *appDataDirPath;
 }
 
 @property(retain) NSMutableArray *filesToTag;
 @property(retain) NSArray *originalTags;
 @property(retain) NSURLConnection *versionCheckConnection;
-@property(copy) NSString *titleArgument;
+@property(copy) NSString *customTitle;
 @property(copy) NSString *weblocFilesFolderPath;
+@property(copy) NSString *appDataDirPath;
 
 
 - (NSString *) getVersionString;
