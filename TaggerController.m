@@ -636,6 +636,8 @@ static NSString* frontAppBundleID = nil;
 	
 	if (guessedAppID != nil)
 		[appIDField setStringValue:guessedAppID];
+	else
+		[appIDField setStringValue:@""];
 	
 	[self showAddScriptDialog];
 }
@@ -682,6 +684,34 @@ static NSString* frontAppBundleID = nil;
 		return;
 	}
 	
+	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
+	
+	// read existing catalog file, check for app ID overlap
+	NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	if ([[catalog allKeys] containsObject:appID])
+	{
+		NSInteger choice = NSRunAlertPanel([NSString
+											stringWithFormat:
+											@"Script for %@ already exists",
+											appName],
+										   [NSString
+											stringWithFormat:
+											@"You already have a Front Application Script set up for %@. Do you want to replace the existing script with this one? (The existing file won't be replaced, only the catalog file entry will be)",
+											appName],
+										   @"Don't replace",
+										   @"Cancel",
+										   @"Replace"
+										   );
+		if (choice == NSAlertDefaultReturn)
+		{
+			[self closeAddScriptDialog];
+			return;
+		}
+		else if (choice == NSAlertAlternateReturn)
+			return;
+	}
+	
 	
 	// copy script into Scripts folder
 	NSString *fileName = [self.addedScriptPath lastPathComponent];
@@ -720,13 +750,11 @@ static NSString* frontAppBundleID = nil;
 		return;
 	}
 	
-	NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
-	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	// set the catalog entry and write the catalog file
 	[catalog setObject:fileName forKey:appID];
 	[catalog writeToFile:catalogFilePath atomically:YES];
 	self.scriptsCatalog = catalog;
 	
-	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
 	NSRunInformationalAlertPanel(@"Script Added",
 								 [NSString
 								  stringWithFormat:
@@ -1624,7 +1652,7 @@ doCommandBySelector:(SEL)command
 		if ([thisFilePath hasSuffix:@".scpt"])
 		{
 			[self suggestAddFrontAppScript:thisFilePath];
-			[NSApp activateIgnoringOtherApps:NO];
+			[NSApp activateIgnoringOtherApps:YES];
 			return YES;
 		}
 	}
