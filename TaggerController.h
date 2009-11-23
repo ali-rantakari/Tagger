@@ -58,6 +58,8 @@
 	NSString *weblocFilesFolderPath;
 	NSString *appDataDirPath;
 	NSString *scriptsDirPath;
+	
+	NSDictionary *scriptsCatalog;
 }
 
 @property(retain) NSMutableArray *filesToTag;
@@ -67,6 +69,7 @@
 @property(copy) NSString *weblocFilesFolderPath;
 @property(copy) NSString *appDataDirPath;
 @property(copy) NSString *scriptsDirPath;
+@property(copy) NSDictionary *scriptsCatalog;
 
 
 - (NSString *) getVersionString;

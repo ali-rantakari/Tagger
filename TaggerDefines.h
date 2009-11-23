@@ -23,6 +23,14 @@
 #define kDefaults											[NSUserDefaults standardUserDefaults]
 #define kDefaultsKey_SaveChangesOnDoubleReturn				@"saveChangesOnDoubleReturn"
 #define kDefaultsKey_ShowFrontAppIcon						@"showFrontAppIcon"
+#define kDefaultsKey_UserFrontAppScriptsEnabled				@"userFrontAppScriptsEnabled"
+
+
+
+#ifndef keyASUserRecordFields
+#define keyASUserRecordFields 'usrf'
+#endif
+
 
 #ifdef _DEBUG_TARGET
 #define DEBUG_LEVEL 4

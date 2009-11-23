@@ -58,6 +58,8 @@
 // that we create for tagging web pages
 #define WEBLOCS_FOLDER_NAME @"Web Links"
 
+#define SCRIPTS_CATALOG_FILENAME @"Catalog.plist"
+
 #define GET_SELECTED_FINDER_ITEMS_APPLESCRIPT	\
 	@"tell application \"Finder\"\n\
 		set retval to \"\"\n\
@@ -210,6 +212,7 @@ static NSString* frontAppBundleID = nil;
 @synthesize weblocFilesFolderPath;
 @synthesize appDataDirPath;
 @synthesize scriptsDirPath;
+@synthesize scriptsCatalog;
 
 
 + (void) load
@@ -320,7 +323,8 @@ static NSString* frontAppBundleID = nil;
 	}
 	
 	
-	// determine & create the scripts folder
+	// determine the scripts folder path & create it if
+	// necessary
 	// 
 	self.appDataDirPath = [[NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,
 																NSUserDomainMask,
@@ -365,6 +369,16 @@ static NSString* frontAppBundleID = nil;
 	}
 	
 	
+	// read scripts catalog file, if it exists and
+	// this feature is enabled
+	// 
+	if ([kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
+	{
+		NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+		// we get nil if file doesn't exist:
+		self.scriptsCatalog = [NSDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	}
+	
 	
 	[kDefaults
 	 registerDefaults:
@@ -372,6 +386,7 @@ static NSString* frontAppBundleID = nil;
 	  dictionaryWithObjectsAndKeys:
 	  [NSNumber numberWithBool:YES], kDefaultsKey_ShowFrontAppIcon,
 	  [NSNumber numberWithBool:NO], kDefaultsKey_SaveChangesOnDoubleReturn,
+	  [NSNumber numberWithBool:NO], kDefaultsKey_UserFrontAppScriptsEnabled,
 	  nil]];
 	
 	
@@ -787,7 +802,7 @@ doCommandBySelector:(SEL)command
 
 
 
-- (void) getFilesFromFrontApp
+- (void) getFilesFromFrontAppUsingBuiltinMethods
 {
 	if ([frontAppBundleID isEqualToString:FINDER_BUNDLE_ID] ||
 		[frontAppBundleID isEqualToString:PATH_FINDER_BUNDLE_ID])
@@ -1003,9 +1018,112 @@ doCommandBySelector:(SEL)command
 
 
 
+- (void) getFilesFromFrontAppUsingUserScripts
+{
+	NSString *scriptForFrontAppFilename = [self.scriptsCatalog objectForKey:frontAppBundleID];
+	if (scriptForFrontAppFilename == nil ||
+		[scriptForFrontAppFilename length] == 0
+		)
+		return;
+	
+	NSString *scriptForFrontAppPath = [self.scriptsDirPath stringByAppendingPathComponent:scriptForFrontAppFilename];
+	
+	BOOL isDir = NO;
+	if (![[NSFileManager defaultManager] fileExistsAtPath:scriptForFrontAppPath isDirectory:&isDir])
+		return;
+	if (isDir)
+		return;
+	
+	NSDictionary *asInitErrorInfo = nil;
+	NSAppleScript *userScriptAS = [[NSAppleScript alloc]
+								   initWithContentsOfURL:[NSURL fileURLWithPath:scriptForFrontAppPath]
+								   error:&asInitErrorInfo];
+	if (asInitErrorInfo != nil)
+	{
+		NSLog(@"Error loading script \"%@\": %@", scriptForFrontAppPath, asInitErrorInfo);
+		NSRunAlertPanel(@"Error Loading User Script",
+						[NSString stringWithFormat:
+						 @"There was an error loading the user script: %@ -- See the system log for more info.",
+						 scriptForFrontAppFilename],
+						@"Quit",
+						nil,
+						nil);
+		[self terminateAppSafely];
+	}
+	
+	DDLogInfo(@"Executing: %@", scriptForFrontAppPath);
+	NSDictionary *asExecuteErrorInfo = nil;
+	NSAppleEventDescriptor *asOutput = [userScriptAS executeAndReturnError:&asExecuteErrorInfo];
+	
+	if (asExecuteErrorInfo != nil)
+	{
+		NSString *errorTitle = nil;
+		NSString *errorMsg = [asExecuteErrorInfo objectForKey:NSAppleScriptErrorMessage];
+		
+		if (errorMsg == nil || [errorMsg length] == 0)
+		{
+			errorMsg = [NSString
+						stringWithFormat:
+						@"There was an error running the user script: %@ -- See the system log for more info.",
+						scriptForFrontAppFilename];
+			errorTitle = [NSString
+						  stringWithFormat:
+						  @"Error Running Script %@:",
+						  scriptForFrontAppFilename];
+			NSLog(@"Error while running script \"%@\": %@", scriptForFrontAppPath, asExecuteErrorInfo);
+		}
+		else
+		{
+			errorTitle = [NSString
+						  stringWithFormat:
+						  @"Error Message from Script %@:",
+						  scriptForFrontAppFilename];
+		}
+		
+		NSRunAlertPanel(errorTitle,
+						errorMsg,
+						@"Quit",
+						nil,
+						nil);
+		[self terminateAppSafely];
+	}
+	
+	if (asOutput == nil)
+		return;
+	
+	asOutput = [asOutput descriptorForKeyword:keyASUserRecordFields];
+	
+	NSUInteger recordCount = [asOutput numberOfItems];
+	
+	// NSAppleEventDescriptor uses 1-based indexes and the keys and
+	// values are stored side by side in the same 'list': key 1, value 1,
+	// key 2, value 2...
+	NSUInteger i;
+    for (i = 1; i <= recordCount; i+=2)
+	{
+		NSString *key = [[asOutput descriptorAtIndex:i] stringValue];
+		
+		if ([key isEqualToString:@"filePaths"])
+		{
+			NSAppleEventDescriptor *fileListDescriptor = [asOutput descriptorAtIndex:i+1];
+			NSUInteger fileListCount = [fileListDescriptor numberOfItems];
+			NSUInteger j;
+			for (j = 1; j <= fileListCount; j++)
+			{
+				[self addFileToTag:[[fileListDescriptor descriptorAtIndex:j] stringValue]];
+			}
+		}
+		else if ([key isEqualToString:@"title"])
+		{
+			self.customTitle = [[asOutput descriptorAtIndex:i+1] stringValue];
+		}
+	}
+}
 
 
-// NSWindow delegate method: terminate app when window closes
+
+
+
 - (void) windowWillClose:(NSNotification *)notification
 {
 	[self terminateAppSafely];
@@ -1022,7 +1140,6 @@ doCommandBySelector:(SEL)command
 }
 
 
-// NSApplication delegate method: before app initialization
 - (void) applicationWillFinishLaunching:(NSNotification *)notification
 {
 	// If not in /Applications, offer to move it there
@@ -1030,7 +1147,6 @@ doCommandBySelector:(SEL)command
 }
 
 
-// NSApplication delegate method: after app initialization
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
 	DDLogInfo(@"applicationDidFinishLaunching");
@@ -1038,8 +1154,14 @@ doCommandBySelector:(SEL)command
 	
 	[progressIndicator startAnimation:self];
 	
-	if ([self.filesToTag count] == 0 && frontAppBundleID != nil)
-		[self getFilesFromFrontApp];
+	if (frontAppBundleID != nil)
+	{
+		if ([self.filesToTag count] == 0)
+			[self getFilesFromFrontAppUsingUserScripts];
+		
+		if ([self.filesToTag count] == 0)
+			[self getFilesFromFrontAppUsingBuiltinMethods];
+	}
 	
 	if ([self.filesToTag count] == 0 && frontAppDocumentURLString != nil)
 	{
@@ -1203,10 +1325,11 @@ doCommandBySelector:(SEL)command
 - (void) fileIconDoneHandler:(NSImage *)image
 {
 	if (image != nil)
-	{
 		[iconImageView setImage:image];
+	
+	if ([kDefaults boolForKey:kDefaultsKey_ShowFrontAppIcon])
 		[appIconImageView setHidden:NO];
-	}
+	
 	[progressIndicator stopAnimation:self];
 }
 
