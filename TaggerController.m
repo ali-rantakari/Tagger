@@ -607,6 +607,23 @@ static NSString* frontAppBundleID = nil;
 
 
 
+- (NSString *) idOfApplication:(NSString *)appName
+{
+	NSString *identifier = nil;
+	
+	NSString *appPath = [[NSWorkspace sharedWorkspace] fullPathForApplication:appName];
+	NSString *appInfoPlistPath = [appPath stringByAppendingPathComponent:@"Contents/Info.plist"];
+	NSDictionary *infoDict = [NSDictionary dictionaryWithContentsOfFile:appInfoPlistPath];
+	if (infoDict != nil)
+		identifier = [infoDict objectForKey:(NSString *)kCFBundleIdentifierKey];
+	
+	// confirm
+	if ([[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:identifier] == nil)
+		return nil;
+	
+	return identifier;
+}
+
 
 - (void) suggestAddFrontAppScript:(NSString *)filePath
 {
@@ -615,20 +632,7 @@ static NSString* frontAppBundleID = nil;
 	NSString *fileName = [filePath lastPathComponent];
 	[scriptFilenameField setStringValue:fileName];
 	
-	NSString *guessedAppID = nil;
-	NSString *appPath = [[NSWorkspace sharedWorkspace] fullPathForApplication:[fileName stringByDeletingPathExtension]];
-	
-	if (appPath != nil)
-	{
-		NSString *appInfoPlistPath = [appPath stringByAppendingPathComponent:@"Contents/Info.plist"];
-		NSDictionary *infoDict = [NSDictionary dictionaryWithContentsOfFile:appInfoPlistPath];
-		if (infoDict != nil)
-		{
-			NSString *identifier = [infoDict objectForKey:(NSString *)kCFBundleIdentifierKey];
-			if (identifier != nil)
-				guessedAppID = identifier;
-		}
-	}
+	NSString *guessedAppID = [self idOfApplication:[fileName stringByDeletingPathExtension]];
 	
 	if (guessedAppID != nil)
 		[appIDField setStringValue:guessedAppID];
@@ -644,21 +648,32 @@ static NSString* frontAppBundleID = nil;
 	
 	[self ensureScriptsCatalogFileExists];
 	
-	NSString *appID = [appIDField stringValue];
+	NSString *appID = nil;
+	NSString *appIDOrName = [appIDField stringValue];
 	NSString *appPath = nil;
 	NSString *errMsg = nil;
 	
-	if (appID == nil || [appID length] == 0)
-		errMsg = @"No application identifier specified";
+	if (appIDOrName == nil || [appIDOrName length] == 0)
+		errMsg = @"No application identifier or name specified";
 	
 	if (errMsg == nil)
 	{
-		appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appID];
+		appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appIDOrName];
+		
+		if (appPath != nil)
+			appID = appIDOrName;
+		else
+		{
+			appPath = [[NSWorkspace sharedWorkspace] fullPathForApplication:appIDOrName];
+			if (appPath != nil)
+				appID = [self idOfApplication:appIDOrName];
+		}
+		
 		if (appPath == nil)
 			errMsg = [NSString
 					  stringWithFormat:
-					  @"Can not find any application on this system matching the identifier: %@",
-					  appID];
+					  @"Can not find any application on this system matching the identifier or name: %@",
+					  appIDOrName];
 	}
 	
 	if (errMsg != nil)
@@ -721,11 +736,13 @@ static NSString* frontAppBundleID = nil;
 								 nil,
 								 nil);
 	
+	self.addedScriptPath = nil;
 	[self closeAddScriptDialog];
 }
 
 - (IBAction) addScriptSheetCancel:(id)sender
 {
+	self.addedScriptPath = nil;
 	[self closeAddScriptDialog];
 }
 
