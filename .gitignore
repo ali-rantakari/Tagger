@@ -12,3 +12,4 @@ deploymentScpTarget
 *.pbxuser
 *.perspective
 *.perspectivev3
+deployment-files/frontAppScripts-readme.txt

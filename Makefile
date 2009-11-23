@@ -50,6 +50,8 @@ release: docs
 	@echo ---- Preparing for deployment:
 	@echo ======================================
 	
+	cp frontAppScripts.markdown deployment-files/frontAppScripts-readme.txt
+	
 # create zip archive
 	mkdir -p $(TEMP_DEPLOYMENT_DIR)
 	cd "./build/Release/"; echo "-g -r ../../$(TEMP_DEPLOYMENT_ZIPFILE) \"Tagger.app\"" | xargs zip
@@ -107,6 +109,7 @@ clean:
 	@echo ---- Cleaning up:
 	@echo ======================================
 	-rm -Rf deployment/*
+	-rm -Rf "deployment-files/frontAppScripts-readme.txt"
 
 
 
