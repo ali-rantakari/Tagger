@@ -10,6 +10,7 @@ deploy : LATEST_APP_VERSION=$(shell curl -s http://hasseg.org/tagger/?versionche
 
 TEMP_DEPLOYMENT_DIR=deployment/$(APP_VERSION)
 TEMP_DEPLOYMENT_ZIPFILE=$(TEMP_DEPLOYMENT_DIR)/Tagger-v$(APP_VERSION).zip
+TEMP_DEPLOYMENT_FASCRIPTS="deployment/frontAppScripts.html"
 VERSIONCHANGELOGFILELOC="$(TEMP_DEPLOYMENT_DIR)/changelog.html"
 GENERALCHANGELOGFILELOC="changelog.html"
 SCP_TARGET=$(shell cat ./deploymentScpTarget)
@@ -22,13 +23,29 @@ DEPLOYMENT_INCLUDES_DIR="deployment-files"
 
 
 
+#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+# generate documentation
+#-------------------------------------------------------------------------
+docs: frontAppScripts.markdown
+	@echo
+	@echo ---- Generating HTML from frontAppScripts.markdown:
+	@echo ======================================
+	echo "<html><head><title>Tagger Front Application Scripts</title>" > $(TEMP_DEPLOYMENT_FASCRIPTS)
+	echo "<style type='text/css'>#main{width:600px; margin:30 auto 300 auto;} p{margin-bottom:30px;}</style>" >> $(TEMP_DEPLOYMENT_FASCRIPTS)
+	echo "</head><body><div id='main'>" >> $(TEMP_DEPLOYMENT_FASCRIPTS)
+	perl utils/markdown/Markdown.pl frontAppScripts.markdown >> $(TEMP_DEPLOYMENT_FASCRIPTS)
+	echo "</div></body></html>" >> $(TEMP_DEPLOYMENT_FASCRIPTS)
+
+
+
 
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
 # make release package (prepare for deployment)
 #-------------------------------------------------------------------------
-release:
+release: docs
 	@echo
 	@echo ---- Preparing for deployment:
 	@echo ======================================
@@ -77,7 +94,7 @@ deploy: release
 	else\
 		echo "Press enter to continue uploading to server or Ctrl-C to cancel.";\
 		read INPUTSTR;\
-		scp -r $(TEMP_DEPLOYMENT_DIR) $(SCP_TARGET);\
+		scp -r $(TEMP_DEPLOYMENT_DIR) $(TEMP_DEPLOYMENT_FASCRIPTS) $(SCP_TARGET);\
 	fi )
 
 
