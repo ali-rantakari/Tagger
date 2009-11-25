@@ -1557,6 +1557,8 @@ doCommandBySelector:(SEL)command
 			[fileCountLabel setHidden:NO];
 			
 			[iconImageView setImage:[NSImage imageNamed:@"manyFiles.png"]];
+			if ([kDefaults boolForKey:kDefaultsKey_ShowFrontAppIcon])
+				[appIconImageView setHidden:NO];
 			[progressIndicator stopAnimation:self];
 			
 			// get common tag names for specified files,
