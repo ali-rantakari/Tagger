@@ -49,6 +49,7 @@
 #define CAMINO_BUNDLE_ID		@"org.mozilla.camino"
 #define OPERA_BUNDLE_ID			@"com.operasoftware.Opera"
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
+#define TAGLISTS_BUNDLE_ID		@"org.hasseg.TagLists"
 
 #define GET_SELECTED_FINDER_ITEMS_APPLESCRIPT	\
 	@"tell application \"Finder\"\n\
@@ -151,6 +152,9 @@
 	return \"error\"\n\
 	end if\n\
 	return emailPaths"
+
+#define TAGLISTS_GET_SELECTED_FILES_APPLESCRIPT \
+	@"tell application \"TagLists\" to return selection"
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
 \n\
@@ -1268,6 +1272,40 @@ doCommandBySelector:(SEL)command
 						self.customTitle = weblocFileName;
 				}
 			}
+		}
+	}
+	else if ([frontAppBundleID isEqualToString:TAGLISTS_BUNDLE_ID])
+	{
+		// try to get the selected files in TagLists
+		NSDictionary *appleScriptError = nil;
+		NSString *getTagListsSelectionASSource = TAGLISTS_GET_SELECTED_FILES_APPLESCRIPT;
+		
+		if (getTagListsSelectionASSource != nil)
+		{
+			NSAppleScript *getTagListsSelectionAS = [[NSAppleScript alloc] initWithSource:getTagListsSelectionASSource];
+			NSAppleEventDescriptor *ret = [getTagListsSelectionAS executeAndReturnError:&appleScriptError];
+			
+			if (appleScriptError != nil)
+			{
+				NSString *errorMsg = [appleScriptError objectForKey:NSAppleScriptErrorMessage];
+				
+				NSRunAlertPanel(@"Error getting files to tag from TagLists",
+								errorMsg,
+								@"Quit", nil, nil);
+				[self terminateAppSafely];
+			}
+			
+			NSUInteger recordCount = [ret numberOfItems];
+			if (recordCount > 0)
+			{
+				NSUInteger i;
+				for (i = 1; i <= recordCount; i++)
+				{
+					[self addFileToTag:[[ret descriptorAtIndex:i] stringValue]];
+				}
+			}
+			
+			[getTagListsSelectionAS release];
 		}
 	}
 }
