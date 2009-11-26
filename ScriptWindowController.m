@@ -98,7 +98,8 @@ BOOL moveFileToTrash(NSString *filePath)
 	
 	for (NSString *appID in mainController.scriptsCatalog)
 	{
-		NSMutableDictionary *scriptDict = [NSMutableDictionary dictionaryWithCapacity:3];
+		NSMutableDictionary *scriptDict = [NSMutableDictionary dictionaryWithCapacity:4];
+		[scriptDict setObject:appID forKey:@"id"];
 		
 		NSString *appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appID];
 		NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
@@ -377,6 +378,37 @@ BOOL moveFileToTrash(NSString *filePath)
 		return;
 	}
 	
+	// check if we already have this script, if the server has
+	// sent us a hash for the selected script
+	BOOL sameScriptInstalled = NO;
+	NSString *hash = [scriptDict objectForKey:kScriptRepoDataKey_hash];
+	if (hash != nil)
+	{
+		for (NSDictionary *installedScriptInfo in self.installedScripts)
+		{
+			if ([[installedScriptInfo objectForKey:@"id"] isEqualToString:appID] &&
+				[[installedScriptInfo objectForKey:@"hash"] isEqualToString:hash]
+				)
+			{
+				sameScriptInstalled = YES;
+				break;
+			}
+		}
+	}
+	if (sameScriptInstalled)
+	{
+		NSRunAlertPanel([NSString
+						 stringWithFormat:
+						 @"You already have this script",
+						 appName],
+						[NSString
+						 stringWithFormat:
+						 @"The script you have set up for %@ is exactly the same as this one in the server repository.",
+						 appName],
+						@"Cancel", nil,nil);
+		return;
+	}
+	
 	// read existing catalog file
 	NSString *catalogFilePath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
 	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
@@ -449,7 +481,14 @@ BOOL moveFileToTrash(NSString *filePath)
 	[self.scriptDownloadConnection cancel];
 	self.scriptDownloadConnection = nil;
 	self.downloadedScriptData = nil;
+	self.downloadedScriptCatalogInfo = nil;
 	[scriptDownloadProgressIndicator stopAnimation:self];
+	[downloadInfoField setStringValue:@""];
+	
+	NSRunAlertPanel(@"Download canceled",
+					@"The script download has been canceled.",
+					@"OK", nil,nil);
+	
 	[self closeDownloadProgressSheet];
 }
 
