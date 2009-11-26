@@ -36,12 +36,17 @@
 	IBOutlet NSProgressIndicator *repoScriptsProgressIndicator;
 	IBOutlet NSButton *reloadRepoButton;
 	IBOutlet NSTextField *scriptInfoTitleField;
-	IBOutlet NSTextField *scriptInfoField;
+	IBOutlet NSTextView *scriptInfoField;
 	IBOutlet NSButton *installButton;
 	
 	IBOutlet NSWindow *addScriptSheet;
 	IBOutlet NSTextField *appIDField;
 	IBOutlet NSTextField *scriptFilenameField;
+	
+	IBOutlet NSWindow *scriptDownloadPanel;
+	IBOutlet NSProgressIndicator *scriptDownloadProgressIndicator;
+	IBOutlet NSButton *scriptDownloadCancelButton;
+	IBOutlet NSTextField *downloadInfoField;
 	
 	NSMutableArray *installedScripts;
 	NSMutableArray *repoScripts;
@@ -50,8 +55,13 @@
 	
 	NSString *addedScriptPath;
 	
+	NSURLConnection *scriptDownloadConnection;
+	NSMutableData *downloadedScriptData;
+	NSDictionary *downloadedScriptCatalogInfo;
+	
 	BOOL installedScriptsUpdatedAtLeastOnce;
 	BOOL catalogLoadedAtLeastOnce;
+	BOOL replaceDownloadedScriptWithoutAsking;
 }
 
 @property(retain) NSMutableArray *installedScripts;
@@ -59,14 +69,27 @@
 @property(retain) NSURLConnection *loadCatalogConnection;
 @property(retain) NSMutableData *catalogData;
 @property(copy) NSString *addedScriptPath;
+@property(retain) NSURLConnection *scriptDownloadConnection;
+@property(retain) NSMutableData *downloadedScriptData;
+@property(copy) NSDictionary *downloadedScriptCatalogInfo;
 
 - (void) updateInstalledScripts;
+
+- (BOOL) addScriptForAppID:(NSString *)appID
+				   appName:(NSString *)appName
+			withScriptData:(NSData *)scriptData
+	replacingWithoutAsking:(BOOL)replaceWithoutAsking;
 
 - (void) suggestAddFrontAppScript:(NSString *)filePath;
 
 - (IBAction) uninstallButtonSelected:(id)sender;
 - (IBAction) installButtonSelected:(id)sender;
 - (IBAction) reloadRepoButtonSelected:(id)sender;
+
+- (IBAction) cancelDownloadSelected:(id)sender;
+
+- (void) showDownloadProgressSheet;
+- (void) closeDownloadProgressSheet;
 
 - (IBAction) addScriptSheetSubmit:(id)sender;
 - (IBAction) addScriptSheetCancel:(id)sender;

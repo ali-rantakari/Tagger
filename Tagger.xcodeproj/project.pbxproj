@@ -21,6 +21,8 @@
 		C93B84870E047C730062C273 /* QuickLook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C93B84860E047C730062C273 /* QuickLook.framework */; };
 		C93CBC45107783300020539B /* PFMoveApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = C93CBC43107783300020539B /* PFMoveApplication.m */; };
 		C9458C4C10BE2797008A4AEB /* ScriptWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = C9458C4B10BE2797008A4AEB /* ScriptWindowController.m */; };
+		C9458DB410BF30EE008A4AEB /* NSData+SHA1.m in Sources */ = {isa = PBXBuildFile; fileRef = C9458DB310BF30EE008A4AEB /* NSData+SHA1.m */; };
+		C9458E0410BF3C80008A4AEB /* HGUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = C9458E0310BF3C80008A4AEB /* HGUtils.m */; };
 		C94C9A220ED0E0C900A556A4 /* manyFiles.png in Resources */ = {isa = PBXBuildFile; fileRef = C94C9A210ED0E0C900A556A4 /* manyFiles.png */; };
 		C9781D031076390E00A79940 /* NSArray+NSTableViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */; };
 		C9873AB80DFC00680083AFCC /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9873AB70DFC00680083AFCC /* Carbon.framework */; };
@@ -81,6 +83,10 @@
 		C93CBC43107783300020539B /* PFMoveApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PFMoveApplication.m; sourceTree = "<group>"; };
 		C9458C4A10BE2797008A4AEB /* ScriptWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScriptWindowController.h; sourceTree = "<group>"; };
 		C9458C4B10BE2797008A4AEB /* ScriptWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScriptWindowController.m; sourceTree = "<group>"; };
+		C9458DB210BF30EE008A4AEB /* NSData+SHA1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+SHA1.h"; sourceTree = "<group>"; };
+		C9458DB310BF30EE008A4AEB /* NSData+SHA1.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+SHA1.m"; sourceTree = "<group>"; };
+		C9458E0210BF3C80008A4AEB /* HGUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HGUtils.h; sourceTree = "<group>"; };
+		C9458E0310BF3C80008A4AEB /* HGUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HGUtils.m; sourceTree = "<group>"; };
 		C94C9A210ED0E0C900A556A4 /* manyFiles.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = manyFiles.png; sourceTree = "<group>"; };
 		C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSArray+NSTableViewDataSource.h"; sourceTree = "<group>"; };
 		C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSArray+NSTableViewDataSource.m"; sourceTree = "<group>"; };
@@ -112,14 +118,14 @@
 			children = (
 				C93CBC47107783390020539B /* LetsMove (PFMoveApplication) */,
 				C91647950FDDA45900B6FA19 /* OpenMeta */,
-				C9CAF099100809DC00328AFF /* NSImage+QuickLook */,
+				C9458DCA10BF32B7008A4AEB /* Helper Categories */,
 				C9CAF1D8100821DA00328AFF /* TaggerDefines.h */,
-				C90301130DF9FAE9009B1A5E /* TaggerController.h */,
-				C90301140DF9FAE9009B1A5E /* TaggerController.m */,
-				C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */,
-				C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */,
+				C9458E0210BF3C80008A4AEB /* HGUtils.h */,
+				C9458E0310BF3C80008A4AEB /* HGUtils.m */,
 				C98A7F3010B03BC600D0C2CE /* HGVersionNumberCompare.h */,
 				C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */,
+				C90301130DF9FAE9009B1A5E /* TaggerController.h */,
+				C90301140DF9FAE9009B1A5E /* TaggerController.m */,
 				C9458C4A10BE2797008A4AEB /* ScriptWindowController.h */,
 				C9458C4B10BE2797008A4AEB /* ScriptWindowController.m */,
 			);
@@ -222,13 +228,17 @@
 			name = "LetsMove (PFMoveApplication)";
 			sourceTree = "<group>";
 		};
-		C9CAF099100809DC00328AFF /* NSImage+QuickLook */ = {
+		C9458DCA10BF32B7008A4AEB /* Helper Categories */ = {
 			isa = PBXGroup;
 			children = (
 				C93B84760E047C3D0062C273 /* NSImage+QuickLook.h */,
 				C93B84750E047C3D0062C273 /* NSImage+QuickLook.m */,
+				C9458DB210BF30EE008A4AEB /* NSData+SHA1.h */,
+				C9458DB310BF30EE008A4AEB /* NSData+SHA1.m */,
+				C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */,
+				C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */,
 			);
-			name = "NSImage+QuickLook";
+			name = "Helper Categories";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -302,6 +312,8 @@
 				C93CBC45107783300020539B /* PFMoveApplication.m in Sources */,
 				C98A7F3210B03BC600D0C2CE /* HGVersionNumberCompare.m in Sources */,
 				C9458C4C10BE2797008A4AEB /* ScriptWindowController.m in Sources */,
+				C9458DB410BF30EE008A4AEB /* NSData+SHA1.m in Sources */,
+				C9458E0410BF3C80008A4AEB /* HGUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

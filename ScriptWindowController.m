@@ -22,6 +22,9 @@
 #import "ScriptWindowController.h"
 #import "NSArray+NSTableViewDataSource.h"
 #import "TaggerDefines.h"
+#import "NSData+SHA1.h"
+#import "HGUtils.h"
+
 
 BOOL moveFileToTrash(NSString *filePath)
 {
@@ -48,6 +51,10 @@ BOOL moveFileToTrash(NSString *filePath)
 @synthesize loadCatalogConnection;
 @synthesize catalogData;
 @synthesize addedScriptPath;
+@synthesize scriptDownloadConnection;
+@synthesize downloadedScriptData;
+@synthesize downloadedScriptCatalogInfo;
+
 
 - (id) init
 {
@@ -67,6 +74,9 @@ BOOL moveFileToTrash(NSString *filePath)
 	self.loadCatalogConnection = nil;
 	self.catalogData = nil;
 	self.addedScriptPath = nil;
+	self.scriptDownloadConnection = nil;
+	self.downloadedScriptData = nil;
+	self.downloadedScriptCatalogInfo = nil;
 	[super dealloc];
 }
 
@@ -106,6 +116,9 @@ BOOL moveFileToTrash(NSString *filePath)
 		
 		[scriptDict setObject:fileName forKey:@"filename"];
 		
+		NSString *hashString = [[[NSData dataWithContentsOfFile:scriptPath] SHA1Digest] hexStringValue];
+		[scriptDict setObject:hashString forKey:@"hash"];
+		
 		[self.installedScripts addObject:scriptDict];
 	}
 	
@@ -117,7 +130,7 @@ BOOL moveFileToTrash(NSString *filePath)
 	if ([[repoScriptsTable selectedRowIndexes] count] == 0)
 	{
 		[scriptInfoTitleField setStringValue:@""];
-		[scriptInfoField setStringValue:@""];
+		[scriptInfoField setString:@""];
 		return;
 	}
 	
@@ -125,30 +138,30 @@ BOOL moveFileToTrash(NSString *filePath)
 	if (selectedScriptDict == nil)
 	{
 		[scriptInfoTitleField setStringValue:@""];
-		[scriptInfoField setStringValue:@""];
+		[scriptInfoField setString:@""];
 		return;
 	}
 	
 	NSString *title = [NSString
 					   stringWithFormat:
 					   @"%@ Script",
-					   [selectedScriptDict objectForKey:@"AppName"]];
-	if ([[selectedScriptDict allKeys] containsObject:@"Author"])
-		title = [title stringByAppendingFormat:@" by %@", [selectedScriptDict objectForKey:@"Author"]];
+					   [selectedScriptDict objectForKey:kScriptRepoDataKey_appName]];
+	if ([[selectedScriptDict allKeys] containsObject:kScriptRepoDataKey_author])
+		title = [title stringByAppendingFormat:@" by %@", [selectedScriptDict objectForKey:kScriptRepoDataKey_author]];
 	
-	NSString *info = [selectedScriptDict objectForKey:@"Info"];
+	NSString *info = [selectedScriptDict objectForKey:kScriptRepoDataKey_info];
 	if (info == nil)
 		info = @"No additional info for this script.";
 	
 	[scriptInfoTitleField setStringValue:title];
-	[scriptInfoField setStringValue:info];
+	[scriptInfoField setString:info];
 }
 
 
 
 
 #pragma mark -
-#pragma mark Loading the catalog from the server
+#pragma mark Loading stuff from the server
 
 - (void) loadCatalogFromServer
 {
@@ -158,7 +171,7 @@ BOOL moveFileToTrash(NSString *filePath)
 	[repoScriptsTable setEnabled:NO];
 	
 	NSURLRequest *request = [NSURLRequest
-							 requestWithURL:kScriptCatalogURL
+							 requestWithURL:kScriptRepoURL
 							 cachePolicy:NSURLRequestReloadIgnoringCacheData
 							 timeoutInterval:10.0
 							 ];
@@ -175,21 +188,42 @@ BOOL moveFileToTrash(NSString *filePath)
 - (void) connection:(NSURLConnection *)connection
    didFailWithError:(NSError *)error
 {
-	self.loadCatalogConnection = nil;
-	
-	[repoScriptsProgressIndicator stopAnimation:self];
-	
-	NSRunAlertPanel(@"Script Repository Update Failed",
-					[NSString
-					 stringWithFormat:
-					 @"Could not load scripts from repository. Error: %@ %@",
-					 [error localizedDescription],
-					 [[error userInfo] objectForKey:NSErrorFailingURLStringKey]],
-					 @"OK", nil,nil);
-	
-	[reloadRepoButton setEnabled:YES];
-	[repoScriptsTable setEnabled:YES];
-	[installButton setEnabled:([[repoScriptsTable selectedRowIndexes] count] > 0)];
+	if ([connection isEqual:self.loadCatalogConnection])
+	{
+		self.loadCatalogConnection = nil;
+		
+		[repoScriptsProgressIndicator stopAnimation:self];
+		
+		NSRunAlertPanel(@"Script Repository Update Failed",
+						[NSString
+						 stringWithFormat:
+						 @"Could not load scripts from repository. Error: %@ %@",
+						 [error localizedDescription],
+						 [[error userInfo] objectForKey:NSErrorFailingURLStringKey]],
+						@"OK", nil,nil);
+		
+		[reloadRepoButton setEnabled:YES];
+		[repoScriptsTable setEnabled:YES];
+		[installButton setEnabled:([[repoScriptsTable selectedRowIndexes] count] > 0)];
+	}
+	else if ([connection isEqual:self.scriptDownloadConnection])
+	{
+		self.scriptDownloadConnection = nil;
+		self.downloadedScriptData = nil;
+		self.downloadedScriptCatalogInfo = nil;
+		[scriptDownloadProgressIndicator stopAnimation:self];
+		[downloadInfoField setStringValue:@""];
+		
+		NSRunAlertPanel(@"Failed to download script",
+						[NSString
+						 stringWithFormat:
+						 @"Could not download script from repository. Error: %@ %@",
+						 [error localizedDescription],
+						 [[error userInfo] objectForKey:NSErrorFailingURLStringKey]],
+						@"OK", nil,nil);
+		
+		[self closeDownloadProgressSheet];
+	}
 }
 
 
@@ -219,71 +253,105 @@ BOOL moveFileToTrash(NSString *filePath)
 - (void) connection:(NSURLConnection *)connection
 	 didReceiveData:(NSData *)data
 {
-	[self.catalogData appendData:data];
+	if ([connection isEqual:self.loadCatalogConnection])
+		[self.catalogData appendData:data];
+	else if ([connection isEqual:self.scriptDownloadConnection])
+	{
+		[self.downloadedScriptData appendData:data];
+		[downloadInfoField
+		 setStringValue:[NSString
+						 stringWithFormat:
+						 @"Downloaded %@",
+						 stringFromBytes([self.downloadedScriptData length])]];
+	}
 }
 
 - (void) connectionDidFinishLoading:(NSURLConnection *)connection
 {
-	self.loadCatalogConnection = nil;
-	[repoScriptsProgressIndicator stopAnimation:self];
-	[reloadRepoButton setEnabled:YES];
-	
-	NSString *deSerializationError = nil;
-	NSArray *scripts = [NSPropertyListSerialization
-						propertyListFromData:self.catalogData
-						mutabilityOption:0
-						format:NULL
-						errorDescription:&deSerializationError];
-	
-	if (deSerializationError != nil)
+	if ([connection isEqual:self.loadCatalogConnection])
 	{
-		NSRunAlertPanel(@"Script Repository Update Failed",
-						[NSString
-						 stringWithFormat:
-						 @"Could not deserialize server response. Error: %@",
-						 deSerializationError],
-						@"OK", nil,nil);
-		return;
-	}
-	else if (scripts == nil)
-	{
-		NSRunAlertPanel(@"Script Repository Update Failed",
-						@"Could not deserialize server response -- not in correct format.",
-						@"OK", nil,nil);
-		return;
-	}
-	
-	[self.repoScripts removeAllObjects];
-	for (NSDictionary *scriptDict in scripts)
-	{
-		NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:scriptDict];
+		self.loadCatalogConnection = nil;
+		[repoScriptsProgressIndicator stopAnimation:self];
+		[reloadRepoButton setEnabled:YES];
 		
-		if (![[dict allKeys] containsObject:@"AppName"])
-			continue;
-		if (![[dict allKeys] containsObject:@"AppID"])
-			continue;
-		if (![[dict allKeys] containsObject:@"DownloadURL"])
-			continue;
-		if (![[dict allKeys] containsObject:@"Author"])
-			[dict setObject:@"?" forKey:@"table-Author"];
-		else
-			[dict setObject:[dict objectForKey:@"Author"] forKey:@"table-Author"];
-		if (![[dict allKeys] containsObject:@"Version"])
-			[dict setObject:@"?" forKey:@"table-Version"];
-		else
-			[dict setObject:[dict objectForKey:@"Version"] forKey:@"table-Version"];
+		NSString *deSerializationError = nil;
+		NSArray *scripts = [NSPropertyListSerialization
+							propertyListFromData:self.catalogData
+							mutabilityOption:0
+							format:NULL
+							errorDescription:&deSerializationError];
 		
-		[self.repoScripts addObject:dict];
+		if (deSerializationError != nil)
+		{
+			NSRunAlertPanel(@"Script Repository Update Failed",
+							[NSString
+							 stringWithFormat:
+							 @"Could not deserialize server response. Error: %@",
+							 deSerializationError],
+							@"OK", nil,nil);
+			return;
+		}
+		else if (scripts == nil)
+		{
+			NSRunAlertPanel(@"Script Repository Update Failed",
+							@"Could not deserialize server response -- not in correct format.",
+							@"OK", nil,nil);
+			return;
+		}
+		
+		[self.repoScripts removeAllObjects];
+		for (NSDictionary *scriptDict in scripts)
+		{
+			NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:scriptDict];
+			
+			if (![[dict allKeys] containsObject:kScriptRepoDataKey_appName])
+				continue;
+			if (![[dict allKeys] containsObject:kScriptRepoDataKey_appID])
+				continue;
+			if (![[dict allKeys] containsObject:kScriptRepoDataKey_downloadURL])
+				continue;
+			if (![[dict allKeys] containsObject:kScriptRepoDataKey_author])
+				[dict setObject:@"?" forKey:@"table-Author"];
+			else
+				[dict setObject:[dict objectForKey:kScriptRepoDataKey_author] forKey:@"table-Author"];
+			if (![[dict allKeys] containsObject:@"Version"])
+				[dict setObject:@"?" forKey:@"table-Version"];
+			else
+				[dict setObject:[dict objectForKey:@"Version"] forKey:@"table-Version"];
+			
+			[self.repoScripts addObject:dict];
+		}
+		
+		[repoScriptsTable setEnabled:YES];
+		[repoScriptsTable reloadData];
+		[installButton setEnabled:([[repoScriptsTable selectedRowIndexes] count] > 0)];
+		catalogLoadedAtLeastOnce = YES;
+		self.catalogData = nil;
 	}
-	
-	[repoScriptsTable setEnabled:YES];
-	[repoScriptsTable reloadData];
-	[installButton setEnabled:([[repoScriptsTable selectedRowIndexes] count] > 0)];
-	catalogLoadedAtLeastOnce = YES;
+	else if ([connection isEqual:self.scriptDownloadConnection])
+	{
+		NSString *appID = [self.downloadedScriptCatalogInfo objectForKey:kScriptRepoDataKey_appID];
+		NSString *appName = [self.downloadedScriptCatalogInfo objectForKey:kScriptRepoDataKey_appName];
+		[self
+		 addScriptForAppID:appID
+		 appName:appName
+		 withScriptData:self.downloadedScriptData
+		 replacingWithoutAsking:replaceDownloadedScriptWithoutAsking];
+		
+		self.scriptDownloadConnection = nil;
+		self.downloadedScriptData = nil;
+		self.downloadedScriptCatalogInfo = nil;
+		[scriptDownloadProgressIndicator stopAnimation:self];
+		[self closeDownloadProgressSheet];
+		[downloadInfoField setStringValue:@""];
+	}
 }
 
 
 
+
+#pragma mark -
+#pragma mark Install & Uninstall
 
 
 - (IBAction) uninstallButtonSelected:(id)sender
@@ -293,7 +361,96 @@ BOOL moveFileToTrash(NSString *filePath)
 
 - (IBAction) installButtonSelected:(id)sender
 {
-	// todo: this
+	// check that the app exists on the local system
+	NSDictionary *scriptDict = [self.repoScripts objectAtIndex:[repoScriptsTable selectedRow]];
+	NSString *appName = [scriptDict objectForKey:kScriptRepoDataKey_appName];
+	NSString *appID = [scriptDict objectForKey:kScriptRepoDataKey_appID];
+	NSString *appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appID];
+	if (appPath == nil)
+	{
+		NSRunAlertPanel(@"Can't find application",
+						[NSString
+						 stringWithFormat:
+						 @"Can not find this application on your system: %@ (%@)",
+						 appName, appID],
+						@"Cancel", nil,nil);
+		return;
+	}
+	
+	// read existing catalog file
+	NSString *catalogFilePath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	
+	// check for app ID overlap
+	replaceDownloadedScriptWithoutAsking = NO;
+	if ([[catalog allKeys] containsObject:appID])
+	{
+		NSInteger choice = NSRunAlertPanel([NSString
+											stringWithFormat:
+											@"Script for %@ already exists",
+											appName],
+										   [NSString
+											stringWithFormat:
+											@"You already have a script set up for %@. Do you want to replace the existing script with this one?",
+											appName],
+										   @"Cancel",
+										   @"Replace",
+										   nil
+										   );
+		
+		if (choice == NSAlertDefaultReturn) // Cancel
+			return;
+		else if (choice == NSAlertAlternateReturn) // Replace
+			replaceDownloadedScriptWithoutAsking = YES;
+	}
+	
+	// begin download
+	self.downloadedScriptCatalogInfo = scriptDict;
+	NSURL *scriptURL = [NSURL URLWithString:[scriptDict objectForKey:kScriptRepoDataKey_downloadURL]];
+	NSURLRequest *request = [NSURLRequest
+							 requestWithURL:scriptURL
+							 cachePolicy:NSURLRequestReloadIgnoringCacheData
+							 timeoutInterval:10.0
+							 ];
+	
+	self.downloadedScriptData = [NSMutableData data];
+	
+	if (!self.scriptDownloadConnection)
+		self.scriptDownloadConnection = [NSURLConnection
+										 connectionWithRequest:request
+										 delegate:self
+										 ];
+	[downloadInfoField setStringValue:@"Waiting..."];
+	[self showDownloadProgressSheet];
+	[scriptDownloadProgressIndicator startAnimation:self];
+}
+
+
+- (void) showDownloadProgressSheet
+{
+	[NSApp
+	 beginSheet:scriptDownloadPanel
+	 modalForWindow:scriptsWindow
+	 modalDelegate:self
+	 didEndSelector:NULL
+	 contextInfo:nil
+	 ];
+}
+
+- (void) closeDownloadProgressSheet
+{
+	[scriptDownloadPanel orderOut:nil];
+	[NSApp endSheet:scriptDownloadPanel];
+}
+
+
+- (IBAction) cancelDownloadSelected:(id)sender
+{
+	[self.scriptDownloadConnection cancel];
+	self.scriptDownloadConnection = nil;
+	self.downloadedScriptData = nil;
+	[scriptDownloadProgressIndicator stopAnimation:self];
+	[self closeDownloadProgressSheet];
 }
 
 - (IBAction) reloadRepoButtonSelected:(id)sender
@@ -310,48 +467,54 @@ BOOL moveFileToTrash(NSString *filePath)
 #pragma mark Adding new Front App Scripts
 
 - (BOOL) addScriptForAppID:(NSString *)appID
+				   appName:(NSString *)appName
 			withScriptData:(NSData *)scriptData
+	replacingWithoutAsking:(BOOL)replaceWithoutAsking
 {
 	[mainController ensureScriptsCatalogFileExists];
-	
-	NSString *appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appID];
-	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
 	
 	// read existing catalog file
 	NSString *catalogFilePath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
 	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
 	
 	// check for app ID overlap
+	BOOL deleteExisting = NO;
 	if ([[catalog allKeys] containsObject:appID])
 	{
-		NSInteger choice = NSRunAlertPanel([NSString
-											stringWithFormat:
-											@"Script for %@ already exists",
-											appName],
-										   [NSString
-											stringWithFormat:
-											@"You already have a script set up for %@. Do you want to replace the existing script with this one?",
-											appName],
-										   @"Don't replace",
-										   @"Cancel",
-										   @"Replace"
-										   );
-		
-		if (choice == NSAlertDefaultReturn) // Don't replace
-			return YES;
-		else if (choice == NSAlertAlternateReturn) // Cancel
-			return NO;
-		else if (choice == NSAlertOtherReturn) // Replace
+		if (replaceWithoutAsking)
+			deleteExisting = YES;
+		else
 		{
-			// remove existing script file for appID
-			NSString *existingScriptFileName = [catalog objectForKey:appID];
-			NSString *existingScriptPath = [mainController.scriptsDirPath
-											stringByAppendingPathComponent:existingScriptFileName];
-			if ([[NSFileManager defaultManager] fileExistsAtPath:existingScriptPath])
-				moveFileToTrash(existingScriptPath);
+			NSInteger choice = NSRunAlertPanel([NSString
+												stringWithFormat:
+												@"Script for %@ already exists",
+												appName],
+											   [NSString
+												stringWithFormat:
+												@"You already have a script set up for %@. Do you want to replace the existing script with this one?",
+												appName],
+											   @"Don't replace",
+											   @"Cancel",
+											   @"Replace"
+											   );
+			
+			if (choice == NSAlertDefaultReturn) // Don't replace
+				return YES;
+			else if (choice == NSAlertAlternateReturn) // Cancel
+				return NO;
+			else if (choice == NSAlertOtherReturn) // Replace
+				deleteExisting = YES;
 		}
 	}
 	
+	if (deleteExisting)
+	{
+		NSString *existingScriptFileName = [catalog objectForKey:appID];
+		NSString *existingScriptPath = [mainController.scriptsDirPath
+										stringByAppendingPathComponent:existingScriptFileName];
+		if ([[NSFileManager defaultManager] fileExistsAtPath:existingScriptPath])
+			moveFileToTrash(existingScriptPath);
+	}
 	
 	NSString *newScriptFileName = [appID stringByAppendingPathExtension:@"scpt"];
 	NSString *newScriptPath = [mainController.scriptsDirPath stringByAppendingPathComponent:newScriptFileName];
@@ -491,9 +654,13 @@ BOOL moveFileToTrash(NSString *filePath)
 	
 	NSData *scriptData = [NSData dataWithContentsOfFile:self.addedScriptPath];
 	
+	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
+	
 	BOOL shouldCloseDialog = [self
 							  addScriptForAppID:appID
-							  withScriptData:scriptData];
+							  appName:appName
+							  withScriptData:scriptData
+							  replacingWithoutAsking:NO];
 	if (shouldCloseDialog)
 	{
 		self.addedScriptPath = nil;

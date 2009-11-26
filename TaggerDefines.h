@@ -29,7 +29,14 @@
 #define kAppSiteURLPrefix		kAppSiteURL
 #define kFrontAppScriptsInfoURL	[kAppSiteURL stringByAppendingString:@"frontAppScripts.html"]
 #define kVersionCheckURL		[NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
-#define kScriptCatalogURL		[NSURL URLWithString:[NSString stringWithFormat:@"%@?scriptCatalog=y", kAppSiteURLPrefix]]
+#define kScriptRepoURL			[NSURL URLWithString:[NSString stringWithFormat:@"%@?scriptCatalog=y", kAppSiteURLPrefix]]
+
+#define kScriptRepoDataKey_appID		@"AppID"
+#define kScriptRepoDataKey_appName		@"AppName"
+#define kScriptRepoDataKey_downloadURL	@"DownloadURL"
+#define kScriptRepoDataKey_author		@"Author"
+#define kScriptRepoDataKey_info			@"Info"
+#define kScriptRepoDataKey_hash			@"Hash"
 
 #define SCRIPTS_CATALOG_FILENAME @"Catalog.plist"
 
