@@ -24,6 +24,24 @@
 
 #define kCatalogURL		[NSURL URLWithString:@"http://hasseg.org/tagger/frontAppCatalog.php"]
 
+BOOL moveFileToTrash(NSString *filePath)
+{
+	if (filePath == nil)
+		return NO;
+	
+	NSString *fileDir = [filePath stringByDeletingLastPathComponent];
+	NSString *fileName = [filePath lastPathComponent];
+	
+	return [[NSWorkspace sharedWorkspace]
+			performFileOperation:NSWorkspaceRecycleOperation
+			source:fileDir
+			destination:@""
+			files:[NSArray arrayWithObject:fileName]
+			tag:nil
+			];
+}
+
+
 @implementation ScriptWindowController
 
 @synthesize installedScripts;
@@ -390,7 +408,6 @@
 	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
 	
 	// read existing catalog file, check for app ID overlap
-	BOOL replaceExistingScript = NO;
 	NSString *catalogFilePath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
 	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
 	if ([[catalog allKeys] containsObject:appID])
@@ -401,21 +418,29 @@
 											appName],
 										   [NSString
 											stringWithFormat:
-											@"You already have a script set up for %@. Do you want to replace the existing script with this one? (The existing file won't be replaced, only the catalog file entry will be)",
+											@"You already have a script set up for %@. Do you want to replace the existing script with this one?",
 											appName],
 										   @"Don't replace",
 										   @"Cancel",
 										   @"Replace"
 										   );
-		if (choice == NSAlertDefaultReturn)
+		
+		if (choice == NSAlertDefaultReturn) // Don't replace
 		{
 			[self closeAddScriptDialog];
 			return;
 		}
-		else if (choice == NSAlertAlternateReturn)
+		else if (choice == NSAlertAlternateReturn) // Cancel
 			return;
-		else if (choice == NSAlertOtherReturn)
-			replaceExistingScript = YES;
+		else if (choice == NSAlertOtherReturn) // Replace
+		{
+			// remove existing script file for appID
+			NSString *existingScriptFileName = [catalog objectForKey:appID];
+			NSString *existingScriptPath = [mainController.scriptsDirPath
+											stringByAppendingPathComponent:existingScriptFileName];
+			if ([[NSFileManager defaultManager] fileExistsAtPath:existingScriptPath])
+				moveFileToTrash(existingScriptPath);
+		}
 	}
 	
 	
