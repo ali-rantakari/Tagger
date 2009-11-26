@@ -38,6 +38,7 @@
 	IBOutlet NSTextField *scriptInfoTitleField;
 	IBOutlet NSTextView *scriptInfoField;
 	IBOutlet NSButton *installButton;
+	IBOutlet NSTextField *youAlreadyHaveThisInfoField;
 	
 	IBOutlet NSWindow *addScriptSheet;
 	IBOutlet NSTextField *appIDField;
@@ -74,6 +75,9 @@
 @property(copy) NSDictionary *downloadedScriptCatalogInfo;
 
 - (void) updateInstalledScripts;
+
+- (BOOL) scriptExistsWithHash:(NSString *)hash
+					 forAppID:(NSString *)appID;
 
 - (BOOL) addScriptForAppID:(NSString *)appID
 				   appName:(NSString *)appName

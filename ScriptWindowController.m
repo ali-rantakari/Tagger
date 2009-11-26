@@ -143,6 +143,7 @@ BOOL moveFileToTrash(NSString *filePath)
 		return;
 	}
 	
+	
 	NSString *title = [NSString
 					   stringWithFormat:
 					   @"%@ Script",
@@ -156,6 +157,26 @@ BOOL moveFileToTrash(NSString *filePath)
 	
 	[scriptInfoTitleField setStringValue:title];
 	[scriptInfoField setString:info];
+	
+	NSString *hash = [selectedScriptDict objectForKey:kScriptRepoDataKey_hash];
+	NSString *appID = [selectedScriptDict objectForKey:kScriptRepoDataKey_appID];
+	BOOL exists = [self scriptExistsWithHash:hash forAppID:appID];
+	[youAlreadyHaveThisInfoField setHidden:!exists];
+	[installButton setEnabled:!exists];
+}
+
+
+- (BOOL) scriptExistsWithHash:(NSString *)hash
+					 forAppID:(NSString *)appID
+{
+	for (NSDictionary *installedScriptInfo in self.installedScripts)
+	{
+		if ([[installedScriptInfo objectForKey:@"id"] isEqualToString:appID] &&
+			[[installedScriptInfo objectForKey:@"hash"] isEqualToString:hash]
+			)
+			return YES;
+	}
+	return NO;
 }
 
 
@@ -205,7 +226,6 @@ BOOL moveFileToTrash(NSString *filePath)
 		
 		[reloadRepoButton setEnabled:YES];
 		[repoScriptsTable setEnabled:YES];
-		[installButton setEnabled:([[repoScriptsTable selectedRowIndexes] count] > 0)];
 	}
 	else if ([connection isEqual:self.scriptDownloadConnection])
 	{
@@ -325,7 +345,6 @@ BOOL moveFileToTrash(NSString *filePath)
 		
 		[repoScriptsTable setEnabled:YES];
 		[repoScriptsTable reloadData];
-		[installButton setEnabled:([[repoScriptsTable selectedRowIndexes] count] > 0)];
 		catalogLoadedAtLeastOnce = YES;
 		self.catalogData = nil;
 	}
@@ -380,22 +399,8 @@ BOOL moveFileToTrash(NSString *filePath)
 	
 	// check if we already have this script, if the server has
 	// sent us a hash for the selected script
-	BOOL sameScriptInstalled = NO;
 	NSString *hash = [scriptDict objectForKey:kScriptRepoDataKey_hash];
-	if (hash != nil)
-	{
-		for (NSDictionary *installedScriptInfo in self.installedScripts)
-		{
-			if ([[installedScriptInfo objectForKey:@"id"] isEqualToString:appID] &&
-				[[installedScriptInfo objectForKey:@"hash"] isEqualToString:hash]
-				)
-			{
-				sameScriptInstalled = YES;
-				break;
-			}
-		}
-	}
-	if (sameScriptInstalled)
+	if (hash != nil && [self scriptExistsWithHash:hash forAppID:appID])
 	{
 		NSRunAlertPanel([NSString
 						 stringWithFormat:
