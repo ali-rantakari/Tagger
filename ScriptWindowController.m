@@ -21,8 +21,7 @@
 
 #import "ScriptWindowController.h"
 #import "NSArray+NSTableViewDataSource.h"
-
-#define kCatalogURL		[NSURL URLWithString:@"http://hasseg.org/tagger/frontAppCatalog.php"]
+#import "TaggerDefines.h"
 
 BOOL moveFileToTrash(NSString *filePath)
 {
@@ -159,7 +158,7 @@ BOOL moveFileToTrash(NSString *filePath)
 	[repoScriptsTable setEnabled:NO];
 	
 	NSURLRequest *request = [NSURLRequest
-							 requestWithURL:kCatalogURL
+							 requestWithURL:kScriptCatalogURL
 							 cachePolicy:NSURLRequestReloadIgnoringCacheData
 							 timeoutInterval:10.0
 							 ];
@@ -310,6 +309,93 @@ BOOL moveFileToTrash(NSString *filePath)
 #pragma mark -
 #pragma mark Adding new Front App Scripts
 
+- (BOOL) addScriptForAppID:(NSString *)appID
+			withScriptData:(NSData *)scriptData
+{
+	[mainController ensureScriptsCatalogFileExists];
+	
+	NSString *appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appID];
+	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
+	
+	// read existing catalog file
+	NSString *catalogFilePath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	
+	// check for app ID overlap
+	if ([[catalog allKeys] containsObject:appID])
+	{
+		NSInteger choice = NSRunAlertPanel([NSString
+											stringWithFormat:
+											@"Script for %@ already exists",
+											appName],
+										   [NSString
+											stringWithFormat:
+											@"You already have a script set up for %@. Do you want to replace the existing script with this one?",
+											appName],
+										   @"Don't replace",
+										   @"Cancel",
+										   @"Replace"
+										   );
+		
+		if (choice == NSAlertDefaultReturn) // Don't replace
+			return YES;
+		else if (choice == NSAlertAlternateReturn) // Cancel
+			return NO;
+		else if (choice == NSAlertOtherReturn) // Replace
+		{
+			// remove existing script file for appID
+			NSString *existingScriptFileName = [catalog objectForKey:appID];
+			NSString *existingScriptPath = [mainController.scriptsDirPath
+											stringByAppendingPathComponent:existingScriptFileName];
+			if ([[NSFileManager defaultManager] fileExistsAtPath:existingScriptPath])
+				moveFileToTrash(existingScriptPath);
+		}
+	}
+	
+	
+	NSString *newScriptFileName = [appID stringByAppendingPathExtension:@"scpt"];
+	NSString *newScriptPath = [mainController.scriptsDirPath stringByAppendingPathComponent:newScriptFileName];
+	
+	// write to file
+	BOOL scriptWriteSuccess = [scriptData writeToFile:newScriptPath atomically:YES];
+	if (!scriptWriteSuccess)
+	{
+		NSRunAlertPanel(@"Error writing script file",
+						@"There was an error while writing the script file into the Front Application Scripts folder.",
+						@"OK",
+						nil,
+						nil);
+		return YES;
+	}
+	
+	// set the catalog entry and write the catalog file
+	[catalog setObject:newScriptFileName forKey:appID];
+	BOOL catalogWriteSuccess = [catalog writeToFile:catalogFilePath atomically:YES];
+	if (!catalogWriteSuccess)
+	{
+		NSRunAlertPanel(@"Error writing script catalog file",
+						@"There was an error while writing the script catalog file into the Front Application Scripts folder.",
+						@"OK",
+						nil,
+						nil);
+		return YES;
+	}
+	
+	mainController.scriptsCatalog = catalog;
+	
+	NSRunInformationalAlertPanel(@"Script Added",
+								 [NSString
+								  stringWithFormat:
+								  @"The script has successfully been added for application %@.",
+								  appName],
+								 @"OK",
+								 nil,
+								 nil);
+	[self updateInstalledScripts];
+	return YES;
+}
+
+
 - (void) showAddScriptDialog
 {
 	[NSApp
@@ -369,8 +455,6 @@ BOOL moveFileToTrash(NSString *filePath)
 	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
 		[kDefaults setBool:YES forKey:kDefaultsKey_UserFrontAppScriptsEnabled];
 	
-	[mainController ensureScriptsCatalogFileExists];
-	
 	NSString *appID = nil;
 	NSString *appIDOrName = [appIDField stringValue];
 	NSString *appPath = nil;
@@ -405,95 +489,16 @@ BOOL moveFileToTrash(NSString *filePath)
 		return;
 	}
 	
-	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
+	NSData *scriptData = [NSData dataWithContentsOfFile:self.addedScriptPath];
 	
-	// read existing catalog file, check for app ID overlap
-	NSString *catalogFilePath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
-	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
-	if ([[catalog allKeys] containsObject:appID])
+	BOOL shouldCloseDialog = [self
+							  addScriptForAppID:appID
+							  withScriptData:scriptData];
+	if (shouldCloseDialog)
 	{
-		NSInteger choice = NSRunAlertPanel([NSString
-											stringWithFormat:
-											@"Script for %@ already exists",
-											appName],
-										   [NSString
-											stringWithFormat:
-											@"You already have a script set up for %@. Do you want to replace the existing script with this one?",
-											appName],
-										   @"Don't replace",
-										   @"Cancel",
-										   @"Replace"
-										   );
-		
-		if (choice == NSAlertDefaultReturn) // Don't replace
-		{
-			[self closeAddScriptDialog];
-			return;
-		}
-		else if (choice == NSAlertAlternateReturn) // Cancel
-			return;
-		else if (choice == NSAlertOtherReturn) // Replace
-		{
-			// remove existing script file for appID
-			NSString *existingScriptFileName = [catalog objectForKey:appID];
-			NSString *existingScriptPath = [mainController.scriptsDirPath
-											stringByAppendingPathComponent:existingScriptFileName];
-			if ([[NSFileManager defaultManager] fileExistsAtPath:existingScriptPath])
-				moveFileToTrash(existingScriptPath);
-		}
-	}
-	
-	
-	// copy script into Scripts folder, avoiding filename
-	// collisions by appending a running number to the end
-	NSString *fileName = [self.addedScriptPath lastPathComponent];
-	NSString *newPath = [mainController.scriptsDirPath stringByAppendingPathComponent:fileName];
-	NSUInteger numberPrefixCounter = 1;
-	while ([[NSFileManager defaultManager] fileExistsAtPath:newPath])
-	{
-		NSString *newFileName = [fileName stringByDeletingPathExtension];
-		newFileName = [newFileName stringByAppendingFormat:@" %i.%@", numberPrefixCounter, [fileName pathExtension]];
-		newPath = [mainController.scriptsDirPath stringByAppendingPathComponent:newFileName];
-		numberPrefixCounter++;
-	}
-	
-	NSError *copyError = nil;
-	[[NSFileManager defaultManager]
-	 copyItemAtPath:self.addedScriptPath
-	 toPath:newPath
-	 error:&copyError];
-	
-	if (copyError != nil)
-	{
-		NSRunAlertPanel(@"Error copying script",
-						[NSString
-						 stringWithFormat:
-						 @"There was an error while copying the script \"%@\" into the Front Application Scripts folder: %@",
-						 fileName, [copyError localizedDescription]],
-						@"OK",
-						nil,
-						nil);
+		self.addedScriptPath = nil;
 		[self closeAddScriptDialog];
-		return;
 	}
-	
-	// set the catalog entry and write the catalog file
-	[catalog setObject:fileName forKey:appID];
-	[catalog writeToFile:catalogFilePath atomically:YES];
-	mainController.scriptsCatalog = catalog;
-	
-	NSRunInformationalAlertPanel(@"Script Added",
-								 [NSString
-								  stringWithFormat:
-								  @"The script \"%@\" has successfully been added for application %@.",
-								  fileName, appName],
-								 @"OK",
-								 nil,
-								 nil);
-	
-	self.addedScriptPath = nil;
-	[self closeAddScriptDialog];
-	[self updateInstalledScripts];
 }
 
 - (IBAction) addScriptSheetCancel:(id)sender

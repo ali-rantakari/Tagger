@@ -29,6 +29,7 @@
 #define kAppSiteURLPrefix		kAppSiteURL
 #define kFrontAppScriptsInfoURL	[kAppSiteURL stringByAppendingString:@"frontAppScripts.html"]
 #define kVersionCheckURL		[NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
+#define kScriptCatalogURL		[NSURL URLWithString:[NSString stringWithFormat:@"%@frontAppCatalog.php", kAppSiteURLPrefix]]
 
 #define SCRIPTS_CATALOG_FILENAME @"Catalog.plist"
 
