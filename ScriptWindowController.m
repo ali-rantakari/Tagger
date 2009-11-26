@@ -59,6 +59,9 @@
 	[mainTabView selectTabViewItem:[mainTabView tabViewItemAtIndex:0]];
 	[installedScriptsTable setDataSource:self.installedScripts];
 	[repoScriptsTable setDataSource:self.repoScripts];
+	
+	// register window for drag & drop operations
+	[scriptsWindow registerForDraggedTypes:[NSArray arrayWithObject:NSFilenamesPboardType]];
 }
 
 
@@ -489,6 +492,28 @@
 		[self updateInstalledScripts];
 	[installedScriptsTable reloadData];
 }
+
+
+
+
+#pragma mark -
+# pragma mark Window drag & drop
+
+- (NSDragOperation) draggingEntered:(id <NSDraggingInfo>)sender
+{
+	return [mainController draggingEntered:sender];
+}
+
+- (BOOL) prepareForDragOperation:(id < NSDraggingInfo >)sender
+{
+	return [mainController prepareForDragOperation:sender];
+}
+
+- (BOOL) performDragOperation:(id < NSDraggingInfo >)sender
+{
+	return [mainController performDragOperation:sender];
+}
+
 
 
 
