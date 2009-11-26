@@ -398,7 +398,7 @@
 											appName],
 										   [NSString
 											stringWithFormat:
-											@"You already have a Front Application Script set up for %@. Do you want to replace the existing script with this one? (The existing file won't be replaced, only the catalog file entry will be)",
+											@"You already have a script set up for %@. Do you want to replace the existing script with this one? (The existing file won't be replaced, only the catalog file entry will be)",
 											appName],
 										   @"Don't replace",
 										   @"Cancel",
@@ -457,7 +457,7 @@
 	NSRunInformationalAlertPanel(@"Script Added",
 								 [NSString
 								  stringWithFormat:
-								  @"The Front Application Script \"%@\" has successfully been added for application %@.",
+								  @"The script \"%@\" has successfully been added for application %@.",
 								  fileName, appName],
 								 @"OK",
 								 nil,
