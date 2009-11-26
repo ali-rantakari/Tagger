@@ -20,6 +20,7 @@
 		C93B84770E047C3D0062C273 /* NSImage+QuickLook.m in Sources */ = {isa = PBXBuildFile; fileRef = C93B84750E047C3D0062C273 /* NSImage+QuickLook.m */; };
 		C93B84870E047C730062C273 /* QuickLook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C93B84860E047C730062C273 /* QuickLook.framework */; };
 		C93CBC45107783300020539B /* PFMoveApplication.m in Sources */ = {isa = PBXBuildFile; fileRef = C93CBC43107783300020539B /* PFMoveApplication.m */; };
+		C9458C4C10BE2797008A4AEB /* ScriptWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = C9458C4B10BE2797008A4AEB /* ScriptWindowController.m */; };
 		C94C9A220ED0E0C900A556A4 /* manyFiles.png in Resources */ = {isa = PBXBuildFile; fileRef = C94C9A210ED0E0C900A556A4 /* manyFiles.png */; };
 		C9781D031076390E00A79940 /* NSArray+NSTableViewDataSource.m in Sources */ = {isa = PBXBuildFile; fileRef = C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */; };
 		C9873AB80DFC00680083AFCC /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9873AB70DFC00680083AFCC /* Carbon.framework */; };
@@ -78,6 +79,8 @@
 		C93B84860E047C730062C273 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = /System/Library/Frameworks/QuickLook.framework; sourceTree = "<absolute>"; };
 		C93CBC42107783300020539B /* PFMoveApplication.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PFMoveApplication.h; sourceTree = "<group>"; };
 		C93CBC43107783300020539B /* PFMoveApplication.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PFMoveApplication.m; sourceTree = "<group>"; };
+		C9458C4A10BE2797008A4AEB /* ScriptWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScriptWindowController.h; sourceTree = "<group>"; };
+		C9458C4B10BE2797008A4AEB /* ScriptWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScriptWindowController.m; sourceTree = "<group>"; };
 		C94C9A210ED0E0C900A556A4 /* manyFiles.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = manyFiles.png; sourceTree = "<group>"; };
 		C9781D011076390E00A79940 /* NSArray+NSTableViewDataSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSArray+NSTableViewDataSource.h"; sourceTree = "<group>"; };
 		C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSArray+NSTableViewDataSource.m"; sourceTree = "<group>"; };
@@ -117,6 +120,8 @@
 				C9781D021076390E00A79940 /* NSArray+NSTableViewDataSource.m */,
 				C98A7F3010B03BC600D0C2CE /* HGVersionNumberCompare.h */,
 				C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */,
+				C9458C4A10BE2797008A4AEB /* ScriptWindowController.h */,
+				C9458C4B10BE2797008A4AEB /* ScriptWindowController.m */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -296,6 +301,7 @@
 				C9781D031076390E00A79940 /* NSArray+NSTableViewDataSource.m in Sources */,
 				C93CBC45107783300020539B /* PFMoveApplication.m in Sources */,
 				C98A7F3210B03BC600D0C2CE /* HGVersionNumberCompare.m in Sources */,
+				C9458C4C10BE2797008A4AEB /* ScriptWindowController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

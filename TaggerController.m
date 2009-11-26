@@ -40,7 +40,7 @@
 #import "NSArray+NSTableViewDataSource.h"
 #import "PFMoveApplication.h"
 #import "HGVersionNumberCompare.h"
-
+#import "ScriptWindowController.h"
 
 #define FINDER_BUNDLE_ID		@"com.apple.finder"
 #define MAIL_BUNDLE_ID			@"com.apple.mail"
@@ -207,7 +207,6 @@ static NSString* frontAppBundleID = nil;
 @synthesize appDataDirPath;
 @synthesize scriptsDirPath;
 @synthesize scriptsCatalog;
-@synthesize addedScriptPath;
 
 
 + (void) load
@@ -371,7 +370,7 @@ static NSString* frontAppBundleID = nil;
 	{
 		NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
 		// we get nil if file doesn't exist:
-		self.scriptsCatalog = [NSDictionary dictionaryWithContentsOfFile:catalogFilePath];
+		self.scriptsCatalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
 	}
 	
 	
@@ -398,7 +397,6 @@ static NSString* frontAppBundleID = nil;
 	self.appDataDirPath = nil;
 	self.scriptsDirPath = nil;
 	self.scriptsCatalog = nil;
-	self.addedScriptPath = nil;
 	
 	if (frontAppBundleID != nil)
 		[frontAppBundleID release];
@@ -432,11 +430,17 @@ static NSString* frontAppBundleID = nil;
 }
 
 
+
+
+
+#pragma mark -
+#pragma mark Helper, Utility etc. methods
+
+
 - (NSString *) getVersionString
 {
 	return [[NSBundle bundleForClass:[self class]] objectForInfoDictionaryKey:(NSString *)kCFBundleVersionKey];
 }
-
 
 
 
@@ -458,115 +462,6 @@ static NSString* frontAppBundleID = nil;
 	[fileListSheet orderOut:nil];
 	[NSApp endSheet:fileListSheet];
 }
-
-
-- (void) showAddScriptDialog
-{
-	[NSApp
-	 beginSheet:addScriptSheet
-	 modalForWindow:mainWindow
-	 modalDelegate:self
-	 didEndSelector:NULL
-	 contextInfo:nil
-	 ];
-}
-
-- (void) closeAddScriptDialog
-{
-	[addScriptSheet orderOut:nil];
-	[NSApp endSheet:addScriptSheet];
-}
-
-
-
-
-
-
-// add a file path to the list of files to tag
-- (void) addFileToTag:(NSString *)aFilePath
-{
-	if (aFilePath == nil || [aFilePath length] == 0)
-		return;
-	
-	NSString *thisFilePath = [aFilePath stringByStandardizingPath];
-	NSString *selfBundlePath = [[[NSBundle bundleForClass:[self class]] bundlePath] stringByStandardizingPath];
-	
-	// let's not allow tagging of self ;)
-	if ([thisFilePath isEqualToString:selfBundlePath])
-		return;
-	
-	BOOL thisPathIsDirectory;
-	BOOL thisPathExists = [[NSFileManager defaultManager]
-						   fileExistsAtPath:thisFilePath
-						   isDirectory:&thisPathIsDirectory
-						   ];
-	if (thisPathExists)
-		[self.filesToTag addObject:thisFilePath];
-	else
-		NSLog(@"Error: file doesn't exist: '%@'", thisFilePath);
-}
-
-
-
-- (IBAction) aboutSelected:(id)sender
-{
-	[aboutWindow center];
-	[aboutWindow makeKeyAndOrderFront:self];
-}
-
-- (IBAction) preferencesSelected:(id)sender
-{
-	[preferencesWindow center];
-	[preferencesWindow makeKeyAndOrderFront:self];
-}
-
-- (IBAction) okSelected:(id)sender
-{
-	[self setTagsAndQuit];
-}
-
-- (IBAction) showFileListSelected:(id)sender
-{
-	[self showFileListDialog];
-}
-
-- (IBAction) closeFileListSelected:(id)sender
-{
-	[self closeFileListDialog];
-}
-
-
-- (IBAction) goToWebsiteSelected:(id)sender
-{
-	[[NSWorkspace sharedWorkspace]
-	 openURL:[NSURL URLWithString:kAppSiteURL]
-	 ];
-}
-
-- (IBAction) readAboutFrontAppScriptsSelected:(id)sender
-{
-	[[NSWorkspace sharedWorkspace]
-	 openURL:[NSURL URLWithString:kFrontAppScriptsInfoURL]
-	 ];
-}
-
-- (IBAction) revealScriptsFolderSelected:(id)sender
-{
-	[[NSWorkspace sharedWorkspace]
-	 selectFile:nil
-	 inFileViewerRootedAtPath:self.scriptsDirPath
-	 ];
-}
-
-- (IBAction) frontAppScriptsPrefToggled:(id)sender
-{
-	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
-		return;
-	
-	[self ensureScriptsCatalogFileExists];
-}
-
-
 
 
 
@@ -611,349 +506,33 @@ static NSString* frontAppBundleID = nil;
 
 
 
-- (NSString *) idOfApplication:(NSString *)appName
-{
-	NSString *identifier = nil;
-	
-	NSString *appPath = [[NSWorkspace sharedWorkspace] fullPathForApplication:appName];
-	NSString *appInfoPlistPath = [appPath stringByAppendingPathComponent:@"Contents/Info.plist"];
-	NSDictionary *infoDict = [NSDictionary dictionaryWithContentsOfFile:appInfoPlistPath];
-	if (infoDict != nil)
-		identifier = [infoDict objectForKey:(NSString *)kCFBundleIdentifierKey];
-	
-	// confirm
-	if ([[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:identifier] == nil)
-		return nil;
-	
-	return identifier;
-}
 
 
-- (void) suggestAddFrontAppScript:(NSString *)filePath
+// add a file path to the list of files to tag
+- (void) addFileToTag:(NSString *)aFilePath
 {
-	self.addedScriptPath = filePath;
+	if (aFilePath == nil || [aFilePath length] == 0)
+		return;
 	
-	NSString *fileName = [filePath lastPathComponent];
-	[scriptFilenameField setStringValue:fileName];
+	NSString *thisFilePath = [aFilePath stringByStandardizingPath];
+	NSString *selfBundlePath = [[[NSBundle bundleForClass:[self class]] bundlePath] stringByStandardizingPath];
 	
-	NSString *guessedAppID = [self idOfApplication:[fileName stringByDeletingPathExtension]];
+	// let's not allow tagging of self ;)
+	if ([thisFilePath isEqualToString:selfBundlePath])
+		return;
 	
-	if (guessedAppID != nil)
-		[appIDField setStringValue:guessedAppID];
+	BOOL thisPathIsDirectory;
+	BOOL thisPathExists = [[NSFileManager defaultManager]
+						   fileExistsAtPath:thisFilePath
+						   isDirectory:&thisPathIsDirectory
+						   ];
+	if (thisPathExists)
+		[self.filesToTag addObject:thisFilePath];
 	else
-		[appIDField setStringValue:@""];
-	
-	[self showAddScriptDialog];
-}
-
-- (IBAction) addScriptSheetSubmit:(id)sender
-{
-	// enable the feature
-	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
-		[kDefaults setBool:YES forKey:kDefaultsKey_UserFrontAppScriptsEnabled];
-	
-	[self ensureScriptsCatalogFileExists];
-	
-	NSString *appID = nil;
-	NSString *appIDOrName = [appIDField stringValue];
-	NSString *appPath = nil;
-	NSString *errMsg = nil;
-	
-	if (appIDOrName == nil || [appIDOrName length] == 0)
-		errMsg = @"No application identifier or name specified";
-	
-	if (errMsg == nil)
-	{
-		appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appIDOrName];
-		
-		if (appPath != nil)
-			appID = appIDOrName;
-		else
-		{
-			appPath = [[NSWorkspace sharedWorkspace] fullPathForApplication:appIDOrName];
-			if (appPath != nil)
-				appID = [self idOfApplication:appIDOrName];
-		}
-		
-		if (appPath == nil)
-			errMsg = [NSString
-					  stringWithFormat:
-					  @"Can not find any application on this system matching the identifier or name: %@",
-					  appIDOrName];
-	}
-	
-	if (errMsg != nil)
-	{
-		NSRunAlertPanel(@"Error with Application Identifier", errMsg, @"OK", nil, nil);
-		return;
-	}
-	
-	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
-	
-	// read existing catalog file, check for app ID overlap
-	NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
-	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
-	if ([[catalog allKeys] containsObject:appID])
-	{
-		NSInteger choice = NSRunAlertPanel([NSString
-											stringWithFormat:
-											@"Script for %@ already exists",
-											appName],
-										   [NSString
-											stringWithFormat:
-											@"You already have a Front Application Script set up for %@. Do you want to replace the existing script with this one? (The existing file won't be replaced, only the catalog file entry will be)",
-											appName],
-										   @"Don't replace",
-										   @"Cancel",
-										   @"Replace"
-										   );
-		if (choice == NSAlertDefaultReturn)
-		{
-			[self closeAddScriptDialog];
-			return;
-		}
-		else if (choice == NSAlertAlternateReturn)
-			return;
-	}
-	
-	
-	// copy script into Scripts folder
-	NSString *fileName = [self.addedScriptPath lastPathComponent];
-	NSString *newPath = [self.scriptsDirPath stringByAppendingPathComponent:fileName];
-	if ([[NSFileManager defaultManager] fileExistsAtPath:newPath])
-	{
-		NSRunAlertPanel(@"Script already exists",
-						[NSString
-						 stringWithFormat:
-						 @"There already is a script file named \"%@\" in your Front Application Scripts folder. The existing file has not been replaced. If you wish to replace it, please manually delete or rename the existing script and try again.",
-						 fileName],
-						@"OK",
-						nil,
-						nil);
-		[self closeAddScriptDialog];
-		return;
-	}
-	
-	NSError *copyError = nil;
-	[[NSFileManager defaultManager]
-	 copyItemAtPath:self.addedScriptPath
-	 toPath:newPath
-	 error:&copyError];
-	
-	if (copyError != nil)
-	{
-		NSRunAlertPanel(@"Error copying script",
-						[NSString
-						 stringWithFormat:
-						 @"There was an error while copying the script \"%@\" into the Front Application Scripts folder: %@",
-						 fileName, [copyError localizedDescription]],
-						@"OK",
-						nil,
-						nil);
-		[self closeAddScriptDialog];
-		return;
-	}
-	
-	// set the catalog entry and write the catalog file
-	[catalog setObject:fileName forKey:appID];
-	[catalog writeToFile:catalogFilePath atomically:YES];
-	self.scriptsCatalog = catalog;
-	
-	NSRunInformationalAlertPanel(@"Script Added",
-								 [NSString
-								  stringWithFormat:
-								  @"The Front Application Script \"%@\" has successfully been added for application %@.",
-								  fileName, appName],
-								 @"OK",
-								 nil,
-								 nil);
-	
-	self.addedScriptPath = nil;
-	[self closeAddScriptDialog];
-}
-
-- (IBAction) addScriptSheetCancel:(id)sender
-{
-	self.addedScriptPath = nil;
-	[self closeAddScriptDialog];
+		NSLog(@"Error: file doesn't exist: '%@'", thisFilePath);
 }
 
 
-
-
-
-
-
-
-
-- (void) setTagsAndQuit
-{
-	[okButton setEnabled:NO];
-	
-	if ([self.filesToTag count] > 0)
-	{
-		DDLogInfo(@"[tagsField objectValue] = %@", [tagsField objectValue]);
-		
-		NSSet *newTagsSet = [NSSet setWithArray:(NSArray *)[tagsField objectValue]];
-		
-		[tagsField setEnabled:NO];
-		
-		DDLogInfo(@"committing...");
-		DDLogInfo(@"newTagsSet = %@", newTagsSet);
-		
-		NSSet *originalTagsSet = [NSSet setWithArray:self.originalTags];
-		BOOL tagsModified = (![originalTagsSet isEqualToSet:newTagsSet]);
-		
-		DDLogInfo(@"tagsModified = %@", ((tagsModified)?@"YES":@"NO"));
-		
-		if (tagsModified)
-		{
-			NSArray *newTagsArray = [newTagsSet allObjects];
-			
-			NSError *setTagsErr;
-			if ([self.filesToTag count] == 1)
-				setTagsErr = [OpenMeta
-							  setUserTags:newTagsArray
-							  path:[self.filesToTag objectAtIndex:0]
-							  ];
-			else
-				setTagsErr = [OpenMeta
-							  setCommonUserTags:self.filesToTag
-							  originalCommonTags:self.originalTags
-							  replaceWith:newTagsArray
-							  ];
-			
-			if (setTagsErr == nil)
-				[OpenMetaPrefs updatePrefsRecentTags:self.originalTags newTags:newTagsArray];
-			else
-			{
-				NSLog(@"error setting tags: %@", [setTagsErr description]);
-				[[NSAlert alertWithError:setTagsErr] runModal];
-			}
-		}
-	}
-	
-	[self terminateAppSafely];
-}
-
-
-
-
-
-
-
-
-
-
-
-// NSTokenField delegate method: token field autocompletion
-- (NSArray *) tokenField:(NSTokenField *)tokenField
- completionsForSubstring:(NSString *)substring 
-			indexOfToken:(NSInteger)tokenIndex
-	 indexOfSelectedItem:(NSInteger *)selectedIndex
-{
-	if (substring == nil || [substring length] == 0)
-		return [OpenMetaPrefs recentTags];
-	
-	NSMutableArray *tagsForAutoCompletion = [NSMutableArray array];
-	
-	for (NSString *recentTag in [OpenMetaPrefs recentTags])
-	{
-		if ([recentTag hasPrefix:substring])
-			[tagsForAutoCompletion addObject:recentTag];
-	}
-	
-	return tagsForAutoCompletion;
-}
-
-
-
-// NSTokenField delegate method: catch keyboard events
-- (BOOL) control:(NSControl *)control
-		textView:(NSTextView *)textView
-doCommandBySelector:(SEL)command
-{
-	static NSInteger allModifierKeysMask = (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
-	static BOOL returnPressedLast = NO;
-	static NSString *lastTagsFieldValue = nil;
-	
-	if (![kDefaults boolForKey:kDefaultsKey_SaveChangesOnDoubleReturn])
-		return NO;
-	
-	if (control != tagsField)
-		return NO;
-	
-	NSEvent *currEvent = [NSApp currentEvent];
-	
-	if (command == @selector(insertNewline:) &&
-		[currEvent type] == NSKeyDown &&
-		[currEvent keyCode] == 36 &&
-		([currEvent modifierFlags] & allModifierKeysMask) == 0
-		)
-	{
-		BOOL fieldContentsChanged = (lastTagsFieldValue == nil)
-									? [tagsField stringValue] != nil
-									: ![lastTagsFieldValue isEqualToString:[tagsField stringValue]];
-		
-		if (returnPressedLast && !fieldContentsChanged)
-			[self setTagsAndQuit];
-		else
-		{
-			returnPressedLast = YES;
-			lastTagsFieldValue = [[tagsField stringValue] copy];
-		}
-	}
-	else
-		returnPressedLast = NO;
-	
-	return NO;
-}
-
-
-
-- (void) deleteWeblocFilesIfNecessary
-{
-	// check if any of the tagged files are .webloc files we've
-	// created, and delete them if they don't have any tags
-	
-	if ([self.filesToTag count] == 0)
-		return;
-	
-	for (NSString *filePath in self.filesToTag)
-	{
-		if (![[filePath stringByStandardizingPath]
-			  hasPrefix:[self.weblocFilesFolderPath stringByStandardizingPath]
-			  ])
-			continue;
-		
-		NSError *getTagsError = nil;
-		NSArray *tags = [OpenMeta getUserTags:filePath error:&getTagsError];
-		if (getTagsError != nil || [tags count] > 0)
-			continue;
-		
-		NSError *removeItemError = nil;
-		BOOL success = [[NSFileManager defaultManager]
-						removeItemAtPath:filePath
-						error:&removeItemError
-						];
-		if (!success)
-		{
-			NSLog(@"ERROR: Could not delete .webloc file (%@): %@",
-				  filePath, [removeItemError localizedDescription]
-				  );
-		}
-	}
-}
-
-
-
-- (void) terminateAppSafely
-{
-	[OpenMetaPrefs synchPrefs];
-	[OpenMetaBackup appIsTerminating];
-	[self deleteWeblocFilesIfNecessary];
-	[NSApp terminate:self];
-}
 
 
 
@@ -1060,8 +639,188 @@ doCommandBySelector:(SEL)command
 
 
 
+- (void) deleteWeblocFilesIfNecessary
+{
+	// check if any of the tagged files are .webloc files we've
+	// created, and delete them if they don't have any tags
+	
+	if ([self.filesToTag count] == 0)
+		return;
+	
+	for (NSString *filePath in self.filesToTag)
+	{
+		if (![[filePath stringByStandardizingPath]
+			  hasPrefix:[self.weblocFilesFolderPath stringByStandardizingPath]
+			  ])
+			continue;
+		
+		NSError *getTagsError = nil;
+		NSArray *tags = [OpenMeta getUserTags:filePath error:&getTagsError];
+		if (getTagsError != nil || [tags count] > 0)
+			continue;
+		
+		NSError *removeItemError = nil;
+		BOOL success = [[NSFileManager defaultManager]
+						removeItemAtPath:filePath
+						error:&removeItemError
+						];
+		if (!success)
+		{
+			NSLog(@"ERROR: Could not delete .webloc file (%@): %@",
+				  filePath, [removeItemError localizedDescription]
+				  );
+		}
+	}
+}
 
 
+
+
+
+
+
+#pragma mark -
+#pragma mark Misc. UI Handlers etc.
+
+- (IBAction) aboutSelected:(id)sender
+{
+	[aboutWindow center];
+	[aboutWindow makeKeyAndOrderFront:self];
+}
+
+- (IBAction) preferencesSelected:(id)sender
+{
+	[preferencesWindow center];
+	[preferencesWindow makeKeyAndOrderFront:self];
+}
+
+- (IBAction) okSelected:(id)sender
+{
+	[self setTagsAndQuit];
+}
+
+- (IBAction) showFileListSelected:(id)sender
+{
+	[self showFileListDialog];
+}
+
+- (IBAction) closeFileListSelected:(id)sender
+{
+	[self closeFileListDialog];
+}
+
+
+- (IBAction) goToWebsiteSelected:(id)sender
+{
+	[[NSWorkspace sharedWorkspace]
+	 openURL:[NSURL URLWithString:kAppSiteURL]
+	 ];
+}
+
+- (IBAction) readAboutFrontAppScriptsSelected:(id)sender
+{
+	[[NSWorkspace sharedWorkspace]
+	 openURL:[NSURL URLWithString:kFrontAppScriptsInfoURL]
+	 ];
+}
+
+- (IBAction) revealScriptsFolderSelected:(id)sender
+{
+	[[NSWorkspace sharedWorkspace]
+	 selectFile:nil
+	 inFileViewerRootedAtPath:self.scriptsDirPath
+	 ];
+}
+
+- (IBAction) frontAppScriptsPrefToggled:(id)sender
+{
+	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
+		return;
+	
+	[self ensureScriptsCatalogFileExists];
+}
+
+- (IBAction) showScriptsWindowSelected:(id)sender
+{
+	[scriptsWindow center];
+	[scriptsWindow makeKeyAndOrderFront:self];
+}
+
+
+// NSTokenField delegate method: token field autocompletion
+- (NSArray *) tokenField:(NSTokenField *)tokenField
+ completionsForSubstring:(NSString *)substring 
+			indexOfToken:(NSInteger)tokenIndex
+	 indexOfSelectedItem:(NSInteger *)selectedIndex
+{
+	if (substring == nil || [substring length] == 0)
+		return [OpenMetaPrefs recentTags];
+	
+	NSMutableArray *tagsForAutoCompletion = [NSMutableArray array];
+	
+	for (NSString *recentTag in [OpenMetaPrefs recentTags])
+	{
+		if ([recentTag hasPrefix:substring])
+			[tagsForAutoCompletion addObject:recentTag];
+	}
+	
+	return tagsForAutoCompletion;
+}
+
+
+
+// NSTokenField delegate method: catch keyboard events
+- (BOOL) control:(NSControl *)control
+		textView:(NSTextView *)textView
+doCommandBySelector:(SEL)command
+{
+	static NSInteger allModifierKeysMask = (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask);
+	static BOOL returnPressedLast = NO;
+	static NSString *lastTagsFieldValue = nil;
+	
+	if (![kDefaults boolForKey:kDefaultsKey_SaveChangesOnDoubleReturn])
+		return NO;
+	
+	if (control != tagsField)
+		return NO;
+	
+	NSEvent *currEvent = [NSApp currentEvent];
+	
+	if (command == @selector(insertNewline:) &&
+		[currEvent type] == NSKeyDown &&
+		[currEvent keyCode] == 36 &&
+		([currEvent modifierFlags] & allModifierKeysMask) == 0
+		)
+	{
+		BOOL fieldContentsChanged = (lastTagsFieldValue == nil)
+		? [tagsField stringValue] != nil
+		: ![lastTagsFieldValue isEqualToString:[tagsField stringValue]];
+		
+		if (returnPressedLast && !fieldContentsChanged)
+			[self setTagsAndQuit];
+		else
+		{
+			returnPressedLast = YES;
+			lastTagsFieldValue = [[tagsField stringValue] copy];
+		}
+	}
+	else
+		returnPressedLast = NO;
+	
+	return NO;
+}
+
+
+
+
+
+
+
+
+
+
+#pragma mark -
+#pragma mark Starting up, getting the file(s) to tag
 
 - (void) getFilesFromFrontAppUsingBuiltinMethods
 {
@@ -1324,8 +1083,18 @@ doCommandBySelector:(SEL)command
 	NSString *scriptForFrontAppPath = [self.scriptsDirPath stringByAppendingPathComponent:scriptForFrontAppFilename];
 	
 	BOOL isDir = NO;
-	if (![[NSFileManager defaultManager] fileExistsAtPath:scriptForFrontAppPath isDirectory:&isDir])
+	BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:scriptForFrontAppPath isDirectory:&isDir];
+	if (!exists)
+	{
+		// the front app ID has an entry in the catalog but the
+		// specified file doesn't exist -> remove entry from
+		// the catalog
+		NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+		[self.scriptsCatalog removeObjectForKey:frontAppBundleID];
+		[self.scriptsCatalog writeToFile:catalogFilePath atomically:YES];
 		return;
+	}
+	
 	if (isDir)
 		return;
 	
@@ -1416,13 +1185,6 @@ doCommandBySelector:(SEL)command
 }
 
 
-
-
-
-- (void) windowWillClose:(NSNotification *)notification
-{
-	[self terminateAppSafely];
-}
 
 
 // NSApplication delegate method: receive file to open (drag & drop or
@@ -1593,6 +1355,10 @@ doCommandBySelector:(SEL)command
 
 
 
+
+#pragma mark -
+#pragma mark Getting the file thumbnail/icon
+
 // method for setting the preview image (or icon) of a file to an imageview
 // -- to be run in a thread of its own
 - (void) setFileIconToView:(NSString *)pathToFile
@@ -1643,9 +1409,87 @@ doCommandBySelector:(SEL)command
 
 
 
+#pragma mark -
+#pragma mark Saving the tags, quitting
 
 
-# pragma mark -- window drag & drop
+
+- (void) terminateAppSafely
+{
+	[OpenMetaPrefs synchPrefs];
+	[OpenMetaBackup appIsTerminating];
+	[self deleteWeblocFilesIfNecessary];
+	[NSApp terminate:self];
+}
+
+
+
+- (void) windowWillClose:(NSNotification *)notification
+{
+	[self terminateAppSafely];
+}
+
+
+
+- (void) setTagsAndQuit
+{
+	[okButton setEnabled:NO];
+	
+	if ([self.filesToTag count] > 0)
+	{
+		DDLogInfo(@"[tagsField objectValue] = %@", [tagsField objectValue]);
+		
+		NSSet *newTagsSet = [NSSet setWithArray:(NSArray *)[tagsField objectValue]];
+		
+		[tagsField setEnabled:NO];
+		
+		DDLogInfo(@"committing...");
+		DDLogInfo(@"newTagsSet = %@", newTagsSet);
+		
+		NSSet *originalTagsSet = [NSSet setWithArray:self.originalTags];
+		BOOL tagsModified = (![originalTagsSet isEqualToSet:newTagsSet]);
+		
+		DDLogInfo(@"tagsModified = %@", ((tagsModified)?@"YES":@"NO"));
+		
+		if (tagsModified)
+		{
+			NSArray *newTagsArray = [newTagsSet allObjects];
+			
+			NSError *setTagsErr;
+			if ([self.filesToTag count] == 1)
+				setTagsErr = [OpenMeta
+							  setUserTags:newTagsArray
+							  path:[self.filesToTag objectAtIndex:0]
+							  ];
+			else
+				setTagsErr = [OpenMeta
+							  setCommonUserTags:self.filesToTag
+							  originalCommonTags:self.originalTags
+							  replaceWith:newTagsArray
+							  ];
+			
+			if (setTagsErr == nil)
+				[OpenMetaPrefs updatePrefsRecentTags:self.originalTags newTags:newTagsArray];
+			else
+			{
+				NSLog(@"error setting tags: %@", [setTagsErr description]);
+				[[NSAlert alertWithError:setTagsErr] runModal];
+			}
+		}
+	}
+	
+	[self terminateAppSafely];
+}
+
+
+
+
+
+
+
+
+#pragma mark -
+# pragma mark Window drag & drop
 
 - (NSDragOperation) draggingEntered:(id <NSDraggingInfo>)sender
 {
@@ -1690,7 +1534,8 @@ doCommandBySelector:(SEL)command
 	NSString *thisFilePath = [filePaths objectAtIndex:0];
 	if ([thisFilePath hasSuffix:@".scpt"])
 	{
-		[self suggestAddFrontAppScript:thisFilePath];
+		[self showScriptsWindowSelected:self];
+		[(ScriptWindowController *)[scriptsWindow delegate] suggestAddFrontAppScript:thisFilePath];
 		[NSApp activateIgnoringOtherApps:YES];
 		return YES;
 	}
@@ -1704,8 +1549,8 @@ doCommandBySelector:(SEL)command
 
 
 
-
-#pragma mark version check & update code
+#pragma mark -
+#pragma mark Version check & update
 
 - (void) checkForUpdates
 {

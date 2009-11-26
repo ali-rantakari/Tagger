@@ -24,14 +24,21 @@
 
 @implementation NSArray (NSTableDataSource)
 
-- (id) tableView:(NSTableView *) aTableView
-objectValueForTableColumn:(NSTableColumn *) aTableColumn
-					  row:(int) rowIndex
-{  
-	return [self objectAtIndex:rowIndex];  
+		 - (id) tableView:(NSTableView *)aTableView
+objectValueForTableColumn:(NSTableColumn *)aTableColumn
+					  row:(int)rowIndex
+{
+	id obj = [self objectAtIndex:rowIndex];
+	if (obj == nil)
+		return nil;
+	
+	if (![obj isKindOfClass:[NSDictionary class]])
+		return obj;
+	
+	return [(NSDictionary *)obj objectForKey:[aTableColumn identifier]];
 }
 
-- (int)numberOfRowsInTableView:(NSTableView *)aTableView
+- (int) numberOfRowsInTableView:(NSTableView *)aTableView
 {
 	return [self count];  
 }
