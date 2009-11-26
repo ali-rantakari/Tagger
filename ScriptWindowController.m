@@ -56,12 +56,13 @@
 
 - (void) awakeFromNib
 {
+	[mainTabView selectTabViewItem:[mainTabView tabViewItemAtIndex:0]];
 	[installedScriptsTable setDataSource:self.installedScripts];
 	[repoScriptsTable setDataSource:self.repoScripts];
 }
 
 
-- (void) generateInstalledScriptsArray
+- (void) updateInstalledScripts
 {
 	[self.installedScripts removeAllObjects];
 	
@@ -87,6 +88,8 @@
 		
 		[self.installedScripts addObject:scriptDict];
 	}
+	
+	installedScriptsUpdatedAtLeastOnce = YES;
 }
 
 - (void) updateSelectedScriptInfo
@@ -384,6 +387,7 @@
 	NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
 	
 	// read existing catalog file, check for app ID overlap
+	BOOL replaceExistingScript = NO;
 	NSString *catalogFilePath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
 	NSMutableDictionary *catalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
 	if ([[catalog allKeys] containsObject:appID])
@@ -407,24 +411,22 @@
 		}
 		else if (choice == NSAlertAlternateReturn)
 			return;
+		else if (choice == NSAlertOtherReturn)
+			replaceExistingScript = YES;
 	}
 	
 	
-	// copy script into Scripts folder
+	// copy script into Scripts folder, avoiding filename
+	// collisions by appending a running number to the end
 	NSString *fileName = [self.addedScriptPath lastPathComponent];
 	NSString *newPath = [mainController.scriptsDirPath stringByAppendingPathComponent:fileName];
-	if ([[NSFileManager defaultManager] fileExistsAtPath:newPath])
+	NSUInteger numberPrefixCounter = 1;
+	while ([[NSFileManager defaultManager] fileExistsAtPath:newPath])
 	{
-		NSRunAlertPanel(@"Script already exists",
-						[NSString
-						 stringWithFormat:
-						 @"There already is a script file named \"%@\" in your Front Application Scripts folder. The existing file has not been replaced. If you wish to replace it, please manually delete or rename the existing script and try again.",
-						 fileName],
-						@"OK",
-						nil,
-						nil);
-		[self closeAddScriptDialog];
-		return;
+		NSString *newFileName = [fileName stringByDeletingPathExtension];
+		newFileName = [newFileName stringByAppendingFormat:@" %i.%@", numberPrefixCounter, [fileName pathExtension]];
+		newPath = [mainController.scriptsDirPath stringByAppendingPathComponent:newFileName];
+		numberPrefixCounter++;
 	}
 	
 	NSError *copyError = nil;
@@ -463,6 +465,7 @@
 	
 	self.addedScriptPath = nil;
 	[self closeAddScriptDialog];
+	[self updateInstalledScripts];
 }
 
 - (IBAction) addScriptSheetCancel:(id)sender
@@ -482,7 +485,8 @@
 
 - (void) windowDidBecomeKey:(NSNotification *)notification
 {
-	[self generateInstalledScriptsArray];
+	if (!installedScriptsUpdatedAtLeastOnce)
+		[self updateInstalledScripts];
 	[installedScriptsTable reloadData];
 }
 

@@ -27,6 +27,7 @@
 {
 	IBOutlet TaggerController *mainController;
 	IBOutlet NSWindow *scriptsWindow;
+	IBOutlet NSTabView *mainTabView;
 	
 	IBOutlet NSTableView *installedScriptsTable;
 	IBOutlet NSButton *uninstallButton;
@@ -49,6 +50,7 @@
 	
 	NSString *addedScriptPath;
 	
+	BOOL installedScriptsUpdatedAtLeastOnce;
 	BOOL catalogLoadedAtLeastOnce;
 }
 
@@ -58,7 +60,7 @@
 @property(retain) NSMutableData *catalogData;
 @property(copy) NSString *addedScriptPath;
 
-- (void) generateInstalledScriptsArray;
+- (void) updateInstalledScripts;
 
 - (void) suggestAddFrontAppScript:(NSString *)filePath;
 
