@@ -14,8 +14,21 @@ Just check the box in Tagger's preferences.
 
 
 
-Using Existing Scripts
-------------------------
+Installing Scripts
+--------------------
+
+You can install ready-made scripts from Tagger's online repository:
+
+ - Select *Tagger &rarr; Manage Front Application Scripts...* from Tagger's menu.
+ - Select the *Get More Scripts* tab
+ - Choose a script from the list, check out its description and press *Install*
+
+After this, you'll be able to launch Tagger with the application you just installed a script for at the front (possibly with some items selected), and Tagger will let you tag those items.
+
+
+
+Installing Existing Scripts Manually
+--------------------------------------
 
 If you have an existing front application script and you'd like to use it, you just need to open Tagger and drag the script file onto Tagger's main window. Tagger will then ask you to enter the identifier or name of the application that this script was written for. When you've entered this, simply press *Add Script* and you're done.
 
