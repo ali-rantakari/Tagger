@@ -28,3 +28,5 @@ NSString *stringFromBytes(CGFloat aSize);
 NSImage *blankFileIcon();
 
 NSUInteger linesInString(NSString *str);
+
+BOOL moveFileToTrash(NSString *filePath);

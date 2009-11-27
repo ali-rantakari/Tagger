@@ -26,22 +26,6 @@
 #import "HGUtils.h"
 
 
-BOOL moveFileToTrash(NSString *filePath)
-{
-	if (filePath == nil)
-		return NO;
-	
-	NSString *fileDir = [filePath stringByDeletingLastPathComponent];
-	NSString *fileName = [filePath lastPathComponent];
-	
-	return [[NSWorkspace sharedWorkspace]
-			performFileOperation:NSWorkspaceRecycleOperation
-			source:fileDir
-			destination:@""
-			files:[NSArray arrayWithObject:fileName]
-			tag:nil
-			];
-}
 
 
 @implementation ScriptWindowController
@@ -132,6 +116,8 @@ BOOL moveFileToTrash(NSString *filePath)
 	{
 		[scriptInfoTitleField setStringValue:@""];
 		[scriptInfoField setString:@""];
+		[youAlreadyHaveThisInfoField setHidden:YES];
+		[installButton setEnabled:NO];
 		return;
 	}
 	
@@ -140,6 +126,8 @@ BOOL moveFileToTrash(NSString *filePath)
 	{
 		[scriptInfoTitleField setStringValue:@""];
 		[scriptInfoField setString:@""];
+		[youAlreadyHaveThisInfoField setHidden:YES];
+		[installButton setEnabled:NO];
 		return;
 	}
 	
@@ -352,18 +340,21 @@ BOOL moveFileToTrash(NSString *filePath)
 	{
 		NSString *appID = [self.downloadedScriptCatalogInfo objectForKey:kScriptRepoDataKey_appID];
 		NSString *appName = [self.downloadedScriptCatalogInfo objectForKey:kScriptRepoDataKey_appName];
+		
+		self.scriptDownloadConnection = nil;
+		self.downloadedScriptCatalogInfo = nil;
+		[scriptDownloadProgressIndicator stopAnimation:self];
+		[self closeDownloadProgressSheet];
+		[downloadInfoField setStringValue:@""];
+		
 		[self
 		 addScriptForAppID:appID
 		 appName:appName
 		 withScriptData:self.downloadedScriptData
 		 replacingWithoutAsking:replaceDownloadedScriptWithoutAsking];
 		
-		self.scriptDownloadConnection = nil;
 		self.downloadedScriptData = nil;
-		self.downloadedScriptCatalogInfo = nil;
-		[scriptDownloadProgressIndicator stopAnimation:self];
-		[self closeDownloadProgressSheet];
-		[downloadInfoField setStringValue:@""];
+		[self updateSelectedScriptInfo];
 	}
 }
 
@@ -376,8 +367,47 @@ BOOL moveFileToTrash(NSString *filePath)
 
 - (IBAction) uninstallButtonSelected:(id)sender
 {
-	// todo: this
+	// confirm
+	NSUInteger numSelected = [[installedScriptsTable selectedRowIndexes] count];
+	NSString *scriptReference = ((numSelected==1)?@"script":[NSString stringWithFormat:@"%i scripts", numSelected]);
+	NSUInteger choice = NSRunAlertPanel(@"Uninstall confirmation",
+										[NSString
+										 stringWithFormat:
+										 @"Are you sure you want to uninstall the selected %@?",
+										 scriptReference],
+										@"Uninstall",
+										@"Cancel",nil);
+	if (choice != NSAlertDefaultReturn)
+		return;
+	
+	// uninstall each
+	NSIndexSet *selectedRows = [installedScriptsTable selectedRowIndexes];
+	NSUInteger i;
+	for (i = [selectedRows firstIndex]; i != NSNotFound; i = [selectedRows indexGreaterThanIndex:i])
+	{
+		NSDictionary *scriptInfo = [self.installedScripts objectAtIndex:i];
+		NSString *appID = [scriptInfo objectForKey:@"id"];
+		NSString *scriptFilename = [scriptInfo objectForKey:@"filename"];
+		NSString *scriptPath = [mainController.scriptsDirPath stringByAppendingPathComponent:scriptFilename];
+		
+		moveFileToTrash(scriptPath);
+		
+		[mainController.scriptsCatalog removeObjectForKey:appID];
+	}
+	
+	NSString *catalogPath = [mainController.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+	[mainController.scriptsCatalog writeToFile:catalogPath atomically:YES];
+	[self updateInstalledScripts];
+	[installedScriptsTable reloadData];
+	
+	NSRunInformationalAlertPanel(@"Uninstallation OK",
+								 [NSString
+								  stringWithFormat:
+								  @"The selected %@ %@ been successfully uninstalled.",
+								  scriptReference, ((numSelected==1)?@"has":@"have")],
+								 @"OK", nil,nil);
 }
+
 
 - (IBAction) installButtonSelected:(id)sender
 {
@@ -786,6 +816,7 @@ willSelectTabViewItem:(NSTabViewItem *)tabViewItem
 	{
 		if (!catalogLoadedAtLeastOnce)
 			[self loadCatalogFromServer];
+		[self updateSelectedScriptInfo];
 	}
 }
 

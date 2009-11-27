@@ -136,5 +136,21 @@ NSUInteger linesInString(NSString *str)
 
 
 
+BOOL moveFileToTrash(NSString *filePath)
+{
+	if (filePath == nil)
+		return NO;
+	
+	NSString *fileDir = [filePath stringByDeletingLastPathComponent];
+	NSString *fileName = [filePath lastPathComponent];
+	
+	return [[NSWorkspace sharedWorkspace]
+			performFileOperation:NSWorkspaceRecycleOperation
+			source:fileDir
+			destination:@""
+			files:[NSArray arrayWithObject:fileName]
+			tag:nil
+			];
+}
 
 
