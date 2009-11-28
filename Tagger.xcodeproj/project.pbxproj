@@ -96,6 +96,7 @@
 		C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */ = {isa = PBXFileReference; lastKnownFileType = folder; path = OpenMetaSpotlight.mdimporter; sourceTree = "<group>"; };
 		C9CAF1D8100821DA00328AFF /* TaggerDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerDefines.h; sourceTree = "<group>"; };
 		C9D85E930E012D3900A20C1D /* Tagger.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Tagger.icns; sourceTree = "<group>"; };
+		C9DB849810C1C900001D0ABC /* TaggerAppleScripts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerAppleScripts.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +129,7 @@
 				C90301140DF9FAE9009B1A5E /* TaggerController.m */,
 				C9458C4A10BE2797008A4AEB /* ScriptWindowController.h */,
 				C9458C4B10BE2797008A4AEB /* ScriptWindowController.m */,
+				C9DB849810C1C900001D0ABC /* TaggerAppleScripts.h */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
