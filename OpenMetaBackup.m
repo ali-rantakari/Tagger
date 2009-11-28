@@ -631,6 +631,14 @@ BOOL gOMIsTerminating = NO;
 	NSDate* thekOMDate = [OpenMeta getXAttr:@"org.openmetainfo.time:kOMUserTags" path:inPath error:&error];
 	NSDate* thekMDItemOMDate = [OpenMeta getXAttr:@"org.openmetainfo.time:kMDItemOMUserTags" path:inPath error:&error];
 	
+	// --begin fix:
+	// fix to bug #19 by Ali Rantakari on 28 Nov, 2009
+	// http://code.google.com/p/openmeta/issues/detail?id=19
+	// 
+	if (thekOMDate == nil)
+		thekOMDate = [OpenMeta getXAttr:@"com.apple.metadata:kOMUserTagTime" path:inPath error:&error];
+	// --end fix
+	
 	if (thekOMDate == nil)
 		return; // there was no date information on the file. 
 	
