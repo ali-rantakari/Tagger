@@ -15,6 +15,10 @@ VERSIONCHANGELOGFILELOC="$(TEMP_DEPLOYMENT_DIR)/changelog.html"
 GENERALCHANGELOGFILELOC="changelog.html"
 SCP_TARGET=$(shell cat ./deploymentScpTarget)
 
+SPARKLE_PRIVATE_KEY_FILE_PATH=$(shell cat ./pathToSparklePrivateKey)
+SPARKLE_TEMP_DEPLOYMENT_ZIPFILE=$(TEMP_DEPLOYMENT_DIR)/Tagger-v$(APP_VERSION)-sparkle.zip
+SPARKLE_DSA_SIGNATURE_FILE=$(TEMP_DEPLOYMENT_DIR)/dsa-signature
+
 DEPLOYMENT_INCLUDES_DIR="deployment-files"
 
 
@@ -54,8 +58,14 @@ release: docs
 	
 # create zip archive
 	mkdir -p $(TEMP_DEPLOYMENT_DIR)
-	cd "./build/Release/"; echo "-g -r ../../$(TEMP_DEPLOYMENT_ZIPFILE) \"Tagger.app\"" | xargs zip
-	cd "$(DEPLOYMENT_INCLUDES_DIR)"; echo "-g -R ../$(TEMP_DEPLOYMENT_ZIPFILE) *" | xargs zip
+	cd "./build/Release/"; echo "-g -r ../../$(TEMP_DEPLOYMENT_ZIPFILE) \"Tagger.app\"" | xargs zip > /dev/null
+	cd "$(DEPLOYMENT_INCLUDES_DIR)"; echo "-g -R ../$(TEMP_DEPLOYMENT_ZIPFILE) *" | xargs zip > /dev/null
+	
+# create "sparkle distribution" zip archive
+	cd "./build/Release/"; echo "-r ../../$(SPARKLE_TEMP_DEPLOYMENT_ZIPFILE) \"Tagger.app\"" | xargs zip > /dev/null
+
+# create DSA signature for "sparkle distribution" zip archive
+	ruby utils/sign_update.rb "$(SPARKLE_TEMP_DEPLOYMENT_ZIPFILE)" "$(SPARKLE_PRIVATE_KEY_FILE_PATH)" > "$(SPARKLE_DSA_SIGNATURE_FILE)"
 	
 # if changelog doesn't already exist in the deployment dir
 # for this version, get 'general' changelog file from root if

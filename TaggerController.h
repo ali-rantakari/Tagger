@@ -52,7 +52,6 @@
 	
 	NSMutableArray *filesToTag;
 	NSArray *originalTags;
-	NSURLConnection *versionCheckConnection;
 	NSString *customTitle;
 	
 	NSString *weblocFilesFolderPath;
@@ -64,7 +63,6 @@
 
 @property(retain) NSMutableArray *filesToTag;
 @property(retain) NSArray *originalTags;
-@property(retain) NSURLConnection *versionCheckConnection;
 @property(copy) NSString *customTitle;
 @property(copy) NSString *weblocFilesFolderPath;
 @property(copy) NSString *appDataDirPath;
@@ -99,12 +97,6 @@
 
 - (void) terminateAppSafely;
 
-
-- (void) checkForUpdates;
-- (void) connection:(NSURLConnection *)connection didFailWithError:(NSError *)error;
-- (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSHTTPURLResponse *)response;
-- (void) connectionDidFinishLoading:(NSURLConnection *)connection;
-
-
+- (void) checkForUpdatesSilently;
 
 @end

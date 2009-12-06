@@ -38,10 +38,18 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1.1.1</string>
+	<string>1.1.2</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUPublicDSAKeyFile</key>
+	<string>dsa_pub.pem</string>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUFeedURL</key>
+	<string>http://hasseg.org/tagger/?appcast=y</string>
+	<key>SFBCrashReporterCrashSubmissionURL</key>
+	<string>http://hasseg.org/tagger/?submitcrash=y</string>
 </dict>
 </plist>

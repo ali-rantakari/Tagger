@@ -24,11 +24,16 @@
 #define kDefaultsKey_SaveChangesOnDoubleReturn				@"saveChangesOnDoubleReturn"
 #define kDefaultsKey_ShowFrontAppIcon						@"showFrontAppIcon"
 #define kDefaultsKey_UserFrontAppScriptsEnabled				@"userFrontAppScriptsEnabled"
+#define kDefaultsKey_AutomaticallyCheckForUpdates			@"automaticallyCheckForUpdates"
+#define kDefaultsKey_HaveAskedAboutAutoUpdates				@"haveAskedAboutAutoUpdates"
+#define kDefaultsKey_LastUpdateCheckDate					@"lastUpdateCheckDate"
+
+// as NSTimeInterval (i.e. in seconds):
+#define kAutoUpdateTimeInterval		60*60*24
 
 #define kAppSiteURL				@"http://hasseg.org/tagger/"
 #define kAppSiteURLPrefix		kAppSiteURL
 #define kFrontAppScriptsInfoURL	[kAppSiteURL stringByAppendingString:@"frontAppScripts.html"]
-#define kVersionCheckURL		[NSURL URLWithString:[NSString stringWithFormat:@"%@?versioncheck=y", kAppSiteURLPrefix]]
 #define kScriptRepoURL			[NSURL URLWithString:[NSString stringWithFormat:@"%@?scriptCatalog=y", kAppSiteURLPrefix]]
 
 #define kScriptRepoDataKey_appID		@"AppID"

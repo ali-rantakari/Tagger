@@ -42,6 +42,8 @@
 #import "HGVersionNumberCompare.h"
 #import "ScriptWindowController.h"
 #import "TaggerAppleScripts.h"
+#import <Sparkle/Sparkle.h>
+
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
 \n\
@@ -88,7 +90,6 @@ static NSString* frontAppBundleID = nil;
 
 @synthesize filesToTag;
 @synthesize originalTags;
-@synthesize versionCheckConnection;
 @synthesize customTitle;
 @synthesize weblocFilesFolderPath;
 @synthesize appDataDirPath;
@@ -268,6 +269,8 @@ static NSString* frontAppBundleID = nil;
 	  [NSNumber numberWithBool:YES], kDefaultsKey_ShowFrontAppIcon,
 	  [NSNumber numberWithBool:NO], kDefaultsKey_SaveChangesOnDoubleReturn,
 	  [NSNumber numberWithBool:NO], kDefaultsKey_UserFrontAppScriptsEnabled,
+	  [NSNumber numberWithBool:NO], kDefaultsKey_AutomaticallyCheckForUpdates,
+	  [NSNumber numberWithBool:NO], kDefaultsKey_HaveAskedAboutAutoUpdates,
 	  nil]];
 	
 	
@@ -279,7 +282,6 @@ static NSString* frontAppBundleID = nil;
 	self.filesToTag = nil;
 	self.originalTags = nil;
 	self.customTitle = nil;
-	self.versionCheckConnection = nil;
 	self.weblocFilesFolderPath = nil;
 	self.appDataDirPath = nil;
 	self.scriptsDirPath = nil;
@@ -310,7 +312,6 @@ static NSString* frontAppBundleID = nil;
 	
 	[mainWindow center];
 	[aboutWindowVersionLabel setStringValue:[NSString stringWithFormat:@"Version %@", [self getVersionString]]];
-	[self checkForUpdates];
 	
 	// register window for drag & drop operations
 	[mainWindow registerForDraggedTypes:[NSArray arrayWithObject:NSFilenamesPboardType]];
@@ -1087,6 +1088,33 @@ doCommandBySelector:(SEL)command
 
 - (void) applicationWillFinishLaunching:(NSNotification *)notification
 {
+	// On first launch: ask the user if they want to use automatic
+	// updates or not.
+	// We don't want to delegate this to Sparkle because we want
+	// the automatic updates to use Sparkle's SUProbingUpdateDriver
+	// (which doesn't pop up the update dialog when it finds updates)
+	// instead of SUScheduledUpdateDriver (which does pop up the
+	// dialog, and which Sparkle would use for this if we let it
+	// handle the automatic update checking). We want to display the
+	// small update button in the main window instead of popping up
+	// the dialog like Sparkle does, so we do this manually by calling
+	// Sparkle's -checkForUpdateInformation (which uses
+	// SUProbingUpdateDriver) in our -checkForUpdatesSilently method.
+	// 
+	if (![kDefaults boolForKey:kDefaultsKey_HaveAskedAboutAutoUpdates])
+	{
+		NSInteger choice = NSRunInformationalAlertPanel(@"Check for updates automatically?",
+														@"Should Tagger automatically check for updates? You can always check for updates manually from the Tagger menu.",
+														@"Yes",
+														@"No",
+														nil);
+		if (choice == NSAlertDefaultReturn)
+			[kDefaults setBool:YES forKey:kDefaultsKey_AutomaticallyCheckForUpdates];
+		[kDefaults setBool:YES forKey:kDefaultsKey_HaveAskedAboutAutoUpdates];
+	}
+	
+	[self checkForUpdatesSilently];
+	
 	// If not in /Applications, offer to move it there
 	PFMoveToApplicationsFolderIfNecessary();
 }
@@ -1299,13 +1327,16 @@ doCommandBySelector:(SEL)command
 #pragma mark -
 #pragma mark Saving the tags, quitting
 
-
-
-- (void) terminateAppSafely
+- (void) cleanUpBeforeQuitting
 {
 	[OpenMetaPrefs synchPrefs];
 	[OpenMetaBackup appIsTerminating];
 	[self deleteWeblocFilesIfNecessary];
+}
+
+- (void) terminateAppSafely
+{
+	[self cleanUpBeforeQuitting];
 	[NSApp terminate:self];
 }
 
@@ -1439,112 +1470,65 @@ doCommandBySelector:(SEL)command
 #pragma mark -
 #pragma mark Version check & update
 
-- (void) checkForUpdates
+- (void) checkForUpdatesSilently
 {
-	NSURL *url = kVersionCheckURL;
+	if (![kDefaults boolForKey:kDefaultsKey_AutomaticallyCheckForUpdates])
+		return;
 	
-	NSURLRequest *request = [NSURLRequest
-							 requestWithURL:url
-							 cachePolicy:NSURLRequestReloadIgnoringCacheData
-							 timeoutInterval:10.0
-							 ];
-	
-	if (!self.versionCheckConnection)
-		self.versionCheckConnection = [NSURLConnection
-									   connectionWithRequest:request
-									   delegate:self
-									   ];
-}
-
-
-- (void) connection:(NSURLConnection *)connection
-   didFailWithError:(NSError *)error
-{
-	self.versionCheckConnection = nil;
-	
-	NSLog(@"Version check connection failed. Error: - %@ %@",
-		  [error localizedDescription],
-		  [[error userInfo] objectForKey:NSErrorFailingURLStringKey]
-		  );
-}
-
-
-
-- (void) connection:(NSURLConnection *)connection
- didReceiveResponse:(NSHTTPURLResponse *)response
-{
-	NSInteger statusCode = [response statusCode];
-	if (statusCode >= 400)
+	// throttle the update checking
+	NSDate *lastCheckDate = [kDefaults objectForKey:kDefaultsKey_LastUpdateCheckDate];
+	if (lastCheckDate == nil)
+		lastCheckDate = [NSDate distantPast];
+	NSTimeInterval intervalSinceLastCheckDate = [[NSDate date] timeIntervalSinceDate:lastCheckDate];
+	if (intervalSinceLastCheckDate < kAutoUpdateTimeInterval)
 	{
-		[connection cancel];
-		[self
-		 connection:connection
-		 didFailWithError:[NSError
-						   errorWithDomain:@"HTTP Status"
-						   code:500
-						   userInfo:[NSDictionary
-									 dictionaryWithObjectsAndKeys:
-										NSLocalizedDescriptionKey,
-										[NSHTTPURLResponse localizedStringForStatusCode:500],
-										nil
-									 ]
-						   ]
-		];
+		DDLogInfo(@"not checking for updates (time interval since last check is too low).");
+		return;
 	}
-	else
-	{
-		NSString *latestVersionString = [[response allHeaderFields] valueForKey:@"Orghassegsoftwarelatestversion"];
-		NSString *currentVersionString = [self getVersionString];
-		
-		if (versionNumberCompare(currentVersionString, latestVersionString) == NSOrderedAscending)
-		{
-			DDLogInfo(@"update found! (latest: %@ current: %@)", latestVersionString, currentVersionString);
-			[updateButton setEnabled: YES];
-			[updateButton setHidden: NO];
-			[updateButton
-			 setToolTip:[NSString
-						 stringWithFormat:
-							@"Version %@ of Tagger is available! (you have v.%@)",
-							latestVersionString,
-							currentVersionString
-						 ]
-			];
-		}
-		else
-			DDLogInfo(@"NO update found. (latest: %@ current: %@)", latestVersionString, currentVersionString);
-	}
+	
+	[[SUUpdater sharedUpdater] setDelegate:self];
+	[[SUUpdater sharedUpdater] checkForUpdateInformation];
+	DDLogInfo(@"checking for updates...");
 }
 
-
-
-
-
-- (void) connectionDidFinishLoading:(NSURLConnection *)connection
+  - (void) updater:(SUUpdater *)updater
+didFindValidUpdate:(SUAppcastItem *)update
 {
-	self.versionCheckConnection = nil;
+	NSString *currentVersionString = [self getVersionString];
+	NSString *latestVersionString = [update versionString];
+	
+	DDLogInfo(@"update found! (latest: %@ current: %@)", latestVersionString, currentVersionString);
+	[updateButton setEnabled: YES];
+	[updateButton setHidden: NO];
+	[updateButton
+	 setToolTip:[NSString
+				 stringWithFormat:
+				 @"Version %@ of Tagger is available! (you have v.%@)",
+				 latestVersionString,
+				 currentVersionString
+				 ]
+	 ];
+	
+	[kDefaults setObject:[NSDate date] forKey:kDefaultsKey_LastUpdateCheckDate];
 }
 
+- (void) updaterDidNotFindUpdate:(SUUpdater *)update
+{
+	DDLogInfo(@"no update found.");
+	[kDefaults setObject:[NSDate date] forKey:kDefaultsKey_LastUpdateCheckDate];
+}
+
+- (void) updaterWillRelaunchApplication:(SUUpdater *)updater
+{
+	[self cleanUpBeforeQuitting];
+}
 
 
 
 - (IBAction) updateSelected:(id)sender
 {
-	[[NSWorkspace sharedWorkspace]
-	 openURL:[NSURL
-			  URLWithString:[NSString
-							 stringWithFormat:
-								@"%@?currentversion=%@",
-								kAppSiteURLPrefix,
-								[self getVersionString]
-							 ]
-			  ]
-	];
+	[[SUUpdater sharedUpdater] checkForUpdates:self];
 }
-
-
-
-
-
 
 
 

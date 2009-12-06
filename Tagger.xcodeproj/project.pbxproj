@@ -28,6 +28,8 @@
 		C9873AB80DFC00680083AFCC /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9873AB70DFC00680083AFCC /* Carbon.framework */; };
 		C98A7F3210B03BC600D0C2CE /* HGVersionNumberCompare.m in Sources */ = {isa = PBXBuildFile; fileRef = C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */; };
 		C98A7F4610B05DBC00D0C2CE /* OpenMetaSpotlight.mdimporter in Copy Files: Library Spotlight */ = {isa = PBXBuildFile; fileRef = C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */; };
+		C996AE7B10CB1C9B003F9433 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C996AE7A10CB1C9B003F9433 /* Sparkle.framework */; };
+		C996AE8C10CB1CC4003F9433 /* Sparkle.framework in Copy Files: Frameworks */ = {isa = PBXBuildFile; fileRef = C996AE7A10CB1C9B003F9433 /* Sparkle.framework */; };
 		C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */ = {isa = PBXBuildFile; fileRef = C9D85E930E012D3900A20C1D /* Tagger.icns */; };
 /* End PBXBuildFile section */
 
@@ -50,6 +52,17 @@
 				C98A7F4610B05DBC00D0C2CE /* OpenMetaSpotlight.mdimporter in Copy Files: Library Spotlight */,
 			);
 			name = "Copy Files: Library Spotlight";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C996AE9510CB1CC9003F9433 /* Copy Files: Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				C996AE8C10CB1CC4003F9433 /* Sparkle.framework in Copy Files: Frameworks */,
+			);
+			name = "Copy Files: Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -93,6 +106,7 @@
 		C9873AB70DFC00680083AFCC /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
 		C98A7F3010B03BC600D0C2CE /* HGVersionNumberCompare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HGVersionNumberCompare.h; sourceTree = "<group>"; };
 		C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HGVersionNumberCompare.m; sourceTree = "<group>"; };
+		C996AE7A10CB1C9B003F9433 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
 		C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */ = {isa = PBXFileReference; lastKnownFileType = folder; path = OpenMetaSpotlight.mdimporter; sourceTree = "<group>"; };
 		C9CAF1D8100821DA00328AFF /* TaggerDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerDefines.h; sourceTree = "<group>"; };
 		C9D85E930E012D3900A20C1D /* Tagger.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Tagger.icns; sourceTree = "<group>"; };
@@ -108,6 +122,7 @@
 				C9873AB80DFC00680083AFCC /* Carbon.framework in Frameworks */,
 				C93B84870E047C730062C273 /* QuickLook.framework in Frameworks */,
 				C91647C50FDDA8ED00B6FA19 /* Security.framework in Frameworks */,
+				C996AE7B10CB1C9B003F9433 /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +152,7 @@
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C996AE7A10CB1C9B003F9433 /* Sparkle.framework */,
 				C91647C40FDDA8ED00B6FA19 /* Security.framework */,
 				C93B84860E047C730062C273 /* QuickLook.framework */,
 				C9873AB70DFC00680083AFCC /* Carbon.framework */,
@@ -255,6 +271,7 @@
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
 				C98A7F4F10B05DD900D0C2CE /* Copy Files: Library Spotlight */,
+				C996AE9510CB1CC9003F9433 /* Copy Files: Frameworks */,
 			);
 			buildRules = (
 			);
@@ -352,6 +369,7 @@
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_ENABLE_OBJC_GC = unsupported;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -374,7 +392,7 @@
 					"\"$(SRCROOT)\"",
 					"\"$(SRCROOT)/../../SVN_working_copies/bghudappkit/build/Release\"",
 				);
-				GCC_ENABLE_OBJC_GC = supported;
+				GCC_ENABLE_OBJC_GC = unsupported;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = Tagger_Prefix.pch;
