@@ -88,7 +88,6 @@
 - (IBAction) goToWebsiteSelected:(id)sender;
 - (IBAction) readAboutFrontAppScriptsSelected:(id)sender;
 - (IBAction) revealScriptsFolderSelected:(id)sender;
-- (IBAction) frontAppScriptsPrefToggled:(id)sender;
 
 - (IBAction) showScriptsWindowSelected:(id)sender;
 

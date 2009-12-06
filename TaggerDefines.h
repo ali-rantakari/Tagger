@@ -23,7 +23,6 @@
 #define kDefaults											[NSUserDefaults standardUserDefaults]
 #define kDefaultsKey_SaveChangesOnDoubleReturn				@"saveChangesOnDoubleReturn"
 #define kDefaultsKey_ShowFrontAppIcon						@"showFrontAppIcon"
-#define kDefaultsKey_UserFrontAppScriptsEnabled				@"userFrontAppScriptsEnabled"
 #define kDefaultsKey_AutomaticallyCheckForUpdates			@"automaticallyCheckForUpdates"
 #define kDefaultsKey_HaveAskedAboutAutoUpdates				@"haveAskedAboutAutoUpdates"
 #define kDefaultsKey_LastUpdateCheckDate					@"lastUpdateCheckDate"

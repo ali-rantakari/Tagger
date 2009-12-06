@@ -688,10 +688,6 @@
 
 - (IBAction) addScriptSheetSubmit:(id)sender
 {
-	// enable the front app scripts feature
-	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
-		[kDefaults setBool:YES forKey:kDefaultsKey_UserFrontAppScriptsEnabled];
-	
 	NSString *appID = nil;
 	NSString *appIDOrName = [appIDField stringValue];
 	NSString *appPath = nil;

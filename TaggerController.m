@@ -251,15 +251,10 @@ static NSString* frontAppBundleID = nil;
 	}
 	
 	
-	// read scripts catalog file, if it exists and
-	// this feature is enabled
-	// 
-	if ([kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
-	{
-		NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
-		// we get nil if file doesn't exist:
-		self.scriptsCatalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
-	}
+	// read scripts catalog file
+	NSString *catalogFilePath = [self.scriptsDirPath stringByAppendingPathComponent:SCRIPTS_CATALOG_FILENAME];
+	// we get nil if file doesn't exist:
+	self.scriptsCatalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
 	
 	
 	[kDefaults
@@ -268,7 +263,6 @@ static NSString* frontAppBundleID = nil;
 	  dictionaryWithObjectsAndKeys:
 	  [NSNumber numberWithBool:YES], kDefaultsKey_ShowFrontAppIcon,
 	  [NSNumber numberWithBool:NO], kDefaultsKey_SaveChangesOnDoubleReturn,
-	  [NSNumber numberWithBool:NO], kDefaultsKey_UserFrontAppScriptsEnabled,
 	  [NSNumber numberWithBool:NO], kDefaultsKey_AutomaticallyCheckForUpdates,
 	  [NSNumber numberWithBool:NO], kDefaultsKey_HaveAskedAboutAutoUpdates,
 	  nil]];
@@ -618,14 +612,6 @@ static NSString* frontAppBundleID = nil;
 	 selectFile:nil
 	 inFileViewerRootedAtPath:self.scriptsDirPath
 	 ];
-}
-
-- (IBAction) frontAppScriptsPrefToggled:(id)sender
-{
-	if (![kDefaults boolForKey:kDefaultsKey_UserFrontAppScriptsEnabled])
-		return;
-	
-	[self ensureScriptsCatalogFileExists];
 }
 
 - (IBAction) showScriptsWindowSelected:(id)sender
