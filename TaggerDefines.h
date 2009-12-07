@@ -27,9 +27,6 @@
 #define kDefaultsKey_HaveAskedAboutAutoUpdates				@"haveAskedAboutAutoUpdates"
 #define kDefaultsKey_LastUpdateCheckDate					@"lastUpdateCheckDate"
 
-// as NSTimeInterval (i.e. in seconds):
-#define kAutoUpdateTimeInterval		60*60*24
-
 #define kAppSiteURL				@"http://hasseg.org/tagger/"
 #define kAppSiteURLPrefix		kAppSiteURL
 #define kFrontAppScriptsInfoURL	[kAppSiteURL stringByAppendingString:@"frontAppScripts.html"]

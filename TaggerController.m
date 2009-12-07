@@ -30,6 +30,7 @@
 // 
 // - OpenMeta allows commas in tag names -- how to handle?
 // 
+// - Allow storing .webloc files under dated paths? (e.g. /YYYY-MM-DD/.) (user ref: Christian F)
 
 
 // BUGS TO FIX:
@@ -1461,12 +1462,18 @@ doCommandBySelector:(SEL)command
 	if (![kDefaults boolForKey:kDefaultsKey_AutomaticallyCheckForUpdates])
 		return;
 	
-	// throttle the update checking
+	// throttle the update checking.
+	// (we just check if the last update check date was on the same day
+	// as the current date; if we enforced a time interval between them
+	// the user changing the system date could get us into a situation
+	// where updates wouldn't be checked for for an arbitrarily long time,
+	// whereas with this system our plans are not affected greatly by
+	// the system date changing)
+	// 
 	NSDate *lastCheckDate = [kDefaults objectForKey:kDefaultsKey_LastUpdateCheckDate];
 	if (lastCheckDate == nil)
 		lastCheckDate = [NSDate distantPast];
-	NSTimeInterval intervalSinceLastCheckDate = [[NSDate date] timeIntervalSinceDate:lastCheckDate];
-	if (intervalSinceLastCheckDate < kAutoUpdateTimeInterval)
+	if (datesRepresentSameDay(lastCheckDate, [NSDate date]))
 	{
 		DDLogInfo(@"not checking for updates (time interval since last check is too low).");
 		return;

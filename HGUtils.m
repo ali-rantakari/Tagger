@@ -154,3 +154,22 @@ BOOL moveFileToTrash(NSString *filePath)
 }
 
 
+
+// whether the two specified dates represent the same calendar day
+BOOL datesRepresentSameDay(NSDate *date1, NSDate *date2)
+{
+	NSUInteger unitFlags = (NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit);
+	NSDateComponents *c1 = [[NSCalendar currentCalendar]
+						   components:unitFlags
+						   fromDate:date1];
+	NSDateComponents *c2 = [[NSCalendar currentCalendar]
+						   components:unitFlags
+						   fromDate:date2];
+	
+	return ([c1 year] == [c2 year]
+			&& [c1 month] == [c2 month]
+			&& [c1 day] == [c2 day]);
+}
+
+
+

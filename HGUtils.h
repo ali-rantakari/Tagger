@@ -30,3 +30,6 @@ NSImage *blankFileIcon();
 NSUInteger linesInString(NSString *str);
 
 BOOL moveFileToTrash(NSString *filePath);
+
+BOOL datesRepresentSameDay(NSDate *date1, NSDate *date2);
+
