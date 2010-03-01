@@ -22,6 +22,10 @@
 
 // TODO:
 // 
+// - Change the logic for determining filenames for .weblocs:
+//   The URL should be the key, not the title (like it is now).
+//   Try to retain backwards compatibility.
+// 
 // - Add OmniWeb support
 // 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
