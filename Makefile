@@ -36,7 +36,7 @@ docs: frontAppScripts.markdown
 	@echo ---- Generating HTML from frontAppScripts.markdown:
 	@echo ======================================
 	echo "<html><head><title>Tagger Front Application Scripts</title>" > $(TEMP_DEPLOYMENT_FASCRIPTS)
-	echo "<style type='text/css'>#main{width:600px; margin:30 auto 300 auto;} p{margin-bottom:30px;}</style>" >> $(TEMP_DEPLOYMENT_FASCRIPTS)
+	echo "<style type='text/css'>#main{width:600px; margin:30 auto 300 auto;} h2{margin-top:30px;} pre{border:1px solid black;background:#eee;padding:10px;display:inline-block;margin:0;}</style>" >> $(TEMP_DEPLOYMENT_FASCRIPTS)
 	echo "</head><body><div id='main'>" >> $(TEMP_DEPLOYMENT_FASCRIPTS)
 	perl utils/markdown/Markdown.pl frontAppScripts.markdown >> $(TEMP_DEPLOYMENT_FASCRIPTS)
 	echo "</div></body></html>" >> $(TEMP_DEPLOYMENT_FASCRIPTS)
@@ -98,16 +98,14 @@ deploy: release
 	@echo ---- Deploying to server:
 	@echo ======================================
 	
-	@echo "Version number is $(APP_VERSION) (latest on server is $(LATEST_APP_VERSION))."
-	@( if [ "$(APP_VERSION)" == "$(LATEST_APP_VERSION)" ];then\
-		echo "It looks like you haven't remembered to increment the version number.";\
-		echo "Cancelling deployment.";\
-		echo "";\
+	@( if [ "$(LATEST_APP_VERSION)" != "$(APP_VERSION)" ];then\
+		echo "Latest version on server is $(LATEST_APP_VERSION). Uploading $(APP_VERSION).";\
 	else\
-		echo "Press enter to continue uploading to server or Ctrl-C to cancel.";\
-		read INPUTSTR;\
-		scp -r $(TEMP_DEPLOYMENT_DIR) $(TEMP_DEPLOYMENT_FASCRIPTS) $(SCP_TARGET);\
-	fi )
+		echo "NOTE: Current version exists on server: ($(APP_VERSION)).";\
+	fi;\
+	echo "Press enter to continue uploading to server or Ctrl-C to cancel.";\
+	read INPUTSTR;\
+	scp -r $(TEMP_DEPLOYMENT_DIR) $(TEMP_DEPLOYMENT_FASCRIPTS) $(SCP_TARGET); )
 
 
 

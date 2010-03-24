@@ -30,6 +30,7 @@
 		C98A7F4610B05DBC00D0C2CE /* OpenMetaSpotlight.mdimporter in Copy Files: Library Spotlight */ = {isa = PBXBuildFile; fileRef = C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */; };
 		C996AE7B10CB1C9B003F9433 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C996AE7A10CB1C9B003F9433 /* Sparkle.framework */; };
 		C996AE8C10CB1CC4003F9433 /* Sparkle.framework in Copy Files: Frameworks */ = {isa = PBXBuildFile; fileRef = C996AE7A10CB1C9B003F9433 /* Sparkle.framework */; };
+		C9C8DAA7115A77FD006B57E8 /* dsa_pub.pem in Resources */ = {isa = PBXBuildFile; fileRef = C9C8DAA6115A77FD006B57E8 /* dsa_pub.pem */; };
 		C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */ = {isa = PBXBuildFile; fileRef = C9D85E930E012D3900A20C1D /* Tagger.icns */; };
 /* End PBXBuildFile section */
 
@@ -107,6 +108,7 @@
 		C98A7F3010B03BC600D0C2CE /* HGVersionNumberCompare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HGVersionNumberCompare.h; sourceTree = "<group>"; };
 		C98A7F3110B03BC600D0C2CE /* HGVersionNumberCompare.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HGVersionNumberCompare.m; sourceTree = "<group>"; };
 		C996AE7A10CB1C9B003F9433 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		C9C8DAA6115A77FD006B57E8 /* dsa_pub.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = dsa_pub.pem; sourceTree = "<group>"; };
 		C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */ = {isa = PBXFileReference; lastKnownFileType = folder; path = OpenMetaSpotlight.mdimporter; sourceTree = "<group>"; };
 		C9CAF1D8100821DA00328AFF /* TaggerDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerDefines.h; sourceTree = "<group>"; };
 		C9D85E930E012D3900A20C1D /* Tagger.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Tagger.icns; sourceTree = "<group>"; };
@@ -203,6 +205,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				C9C8DAA6115A77FD006B57E8 /* dsa_pub.pem */,
 				C9CAF177100819A300328AFF /* OpenMetaSpotlight.mdimporter */,
 				C94C9A210ED0E0C900A556A4 /* manyFiles.png */,
 				C9D85E930E012D3900A20C1D /* Tagger.icns */,
@@ -310,6 +313,7 @@
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */,
 				C94C9A220ED0E0C900A556A4 /* manyFiles.png in Resources */,
+				C9C8DAA7115A77FD006B57E8 /* dsa_pub.pem in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
