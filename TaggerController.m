@@ -1038,15 +1038,22 @@ doCommandBySelector:(SEL)command
 	
 	NSUInteger recordCount = [asOutput numberOfItems];
 	
+	// We store the title of the given weblink (or something like "%d Web links"
+	// if there are more than one) here so that we can use this instead as
+	// the custom GUI title if no top-level 'title' property is given in
+	// the user script
+	NSString *weblinkCustomTitle = nil;
+	
 	// NSAppleEventDescriptor uses 1-based indexes and the keys and
 	// values are stored side by side in the same 'list': key 1, value 1,
 	// key 2, value 2...
 	NSUInteger i;
     for (i = 1; i <= recordCount; i+=2)
 	{
-		NSString *key = [[asOutput descriptorAtIndex:i] stringValue];
+		NSString *key = [[[asOutput descriptorAtIndex:i] stringValue] lowercaseString];
 		
-		if ([key isEqualToString:@"filePaths"])
+		// {filepaths:{"path1", "path2"}}
+		if ([key isEqualToString:@"filepaths"])
 		{
 			NSAppleEventDescriptor *fileListDescriptor = [asOutput descriptorAtIndex:i+1];
 			NSUInteger fileListCount = [fileListDescriptor numberOfItems];
@@ -1056,11 +1063,63 @@ doCommandBySelector:(SEL)command
 				[self addFileToTag:[[fileListDescriptor descriptorAtIndex:j] stringValue]];
 			}
 		}
+		// {weblinks:{ {link:"http://url", title:"page"}, {link:"http://another-url", title:"another page"} }}
+		else if ([key isEqualToString:@"weblinks"])
+		{
+			NSAppleEventDescriptor *webLinkListDescriptor = [asOutput descriptorAtIndex:i+1];
+			NSUInteger webLinkListCount = [webLinkListDescriptor numberOfItems];
+			if (webLinkListCount > 1)
+				weblinkCustomTitle = [NSString stringWithFormat:@"%d Web links", webLinkListCount];
+			NSUInteger k;
+			for (k = 1; k <= webLinkListCount; k++)
+			{
+				NSString *URLStr = nil;
+				NSString *titleStr = nil;
+				
+				NSAppleEventDescriptor *linkPropsDescriptor = [[webLinkListDescriptor descriptorAtIndex:k]
+																   descriptorForKeyword:keyASUserRecordFields];
+				NSUInteger linkPropsCount = [linkPropsDescriptor numberOfItems];
+				NSUInteger m;
+				for (m = 1; m <= linkPropsCount; m+=2)
+				{
+					NSString *linkPropsKey = [[[linkPropsDescriptor descriptorAtIndex:m] stringValue] lowercaseString];
+					if ([linkPropsKey isEqualToString:@"link"])
+						URLStr = [[linkPropsDescriptor descriptorAtIndex:m+1] stringValue];
+					else if ([linkPropsKey isEqualToString:@"title"])
+						titleStr = [[linkPropsDescriptor descriptorAtIndex:m+1] stringValue];
+				}
+				
+				if (URLStr == nil || titleStr == nil)
+					continue;
+				
+				NSString *weblocFilePath = [self
+											getWeblocFilePathForTitle:titleStr
+											URL:URLStr
+											];
+				if (weblocFilePath == nil)
+					continue;
+				
+				[self addFileToTag:weblocFilePath];
+				
+				if (weblinkCustomTitle != nil)
+					continue;
+				NSString *weblocFileName = [weblocFilePath lastPathComponent];
+				NSRange dotRange = [weblocFileName rangeOfString:@"." options:NSBackwardsSearch];
+				if (dotRange.location != NSNotFound)
+					weblinkCustomTitle = [weblocFileName substringToIndex:dotRange.location];
+				else
+					weblinkCustomTitle = weblocFileName;
+			}
+		}
+		// {title:"3 MyApp documents"}
 		else if ([key isEqualToString:@"title"])
 		{
 			self.customTitle = [[asOutput descriptorAtIndex:i+1] stringValue];
 		}
 	}
+	
+	if (self.customTitle == nil && weblinkCustomTitle != nil)
+		self.customTitle = weblinkCustomTitle;
 }
 
 

@@ -7,13 +7,6 @@ Documentation for Tagger's "Front Application Scripts" Feature
 
 
 
-Enabling Front Application Scripts
-------------------------------------
-
-Just check the box in Tagger's preferences.
-
-
-
 Installing Scripts
 --------------------
 
@@ -39,9 +32,20 @@ You can also do this manually by copying the AppleScript file into the Scripts f
 Writing new Scripts
 ---------------------
 
-If you'd like to __write a front application script__ for an application, you just need to make sure that your script returns the correct kind of data to Tagger. What Tagger wants is a record with the field `filePaths`, containing a list of full paths to the files to tag. This record may also contain the field `title`, which, if included, will specify what title to display in place of the tagged filename(s). An example:
+If you'd like to __write a front application script__ for an application, you just need to make sure that your script returns the correct kind of data to Tagger. What Tagger wants is a record with one of these two fields (i.e. not both):
 
-    return {filePaths:{"/path/to/file1.ext", "/path/to/file2.ext"}, title:"2 SuperExtra App Documents"}
+- `filePaths` (containing _a list of full paths_ to the files to tag)
+- `webLinks` (containing _a list of records_ each of which should have the fields `link` (a URL string) and `title` (the title for document that the link points to -- if the link points to a web page, this should be the title of that web page))
+
+This record may also contain the field `title`, which, if included, will specify what title to display in place of the tagged filename(s).
+
+_Example #1: Return paths to two files and a custom title_
+
+        return {filePaths:{"/path/to/file1.ext", "/path/to/file2.ext"}, title:"2 SuperExtra App Documents"}
+
+_Example #2: Return two web links_
+
+        return {webLinks:{{link:"http://hasseg.org", title:"Hasseg site"}, {link:"http://hasseg.org/tagger", title:"Tagger site"}}}
 
 Also, any error messages a script throws will be shown to the user. For example:
 
