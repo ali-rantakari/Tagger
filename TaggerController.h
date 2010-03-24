@@ -76,6 +76,7 @@
 
 - (void) ensureScriptsCatalogFileExists;
 
+- (BOOL) removeURLFromWeblocCatalog:(NSString *)url;
 - (NSString *) getWeblocFilePathForTitle:(NSString *)title URL:(NSString *)url;
 
 

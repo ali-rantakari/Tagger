@@ -40,6 +40,7 @@
 #define kScriptRepoDataKey_hash			@"Hash"
 
 #define SCRIPTS_CATALOG_FILENAME @"Catalog.plist"
+#define WEBLOC_FILES_CATALOG_FILENAME @"WeblocCatalog.plist"
 
 // name of the folder where we save the .webloc files
 // that we create for tagging web pages

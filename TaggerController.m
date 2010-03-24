@@ -22,10 +22,6 @@
 
 // TODO:
 // 
-// - Change the logic for determining filenames for .weblocs:
-//   The URL should be the key, not the title (like it is now).
-//   Try to retain backwards compatibility.
-// 
 // - Add OmniWeb support
 // 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
@@ -262,6 +258,9 @@ static NSString* frontAppBundleID = nil;
 	self.scriptsCatalog = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
 	
 	
+	
+	
+	
 	[kDefaults
 	 registerDefaults:
 	 [NSDictionary
@@ -422,15 +421,112 @@ static NSString* frontAppBundleID = nil;
 
 
 
+#pragma mark -
+#pragma mark Dealing with .webloc files
+
+// ensures that the file exists
+- (NSString *) getWeblocCatalogFilePath
+{
+	NSString *catalogFilePath = [self.appDataDirPath stringByAppendingPathComponent:WEBLOC_FILES_CATALOG_FILENAME];
+	if (![[NSFileManager defaultManager] fileExistsAtPath:catalogFilePath])
+		[[NSDictionary dictionary] writeToFile:catalogFilePath atomically:NO];
+	return catalogFilePath;
+}
+
+- (BOOL) saveWeblocFilenameToCatalog:(NSString *)filename
+							  forURL:(NSString *)url
+{
+	NSString *catalogFilePath = [self getWeblocCatalogFilePath];
+	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	[dict setObject:filename forKey:url];
+	return [dict writeToFile:catalogFilePath atomically:YES];
+}
+
+- (BOOL) removeURLFromWeblocCatalog:(NSString *)url
+{
+	NSString *catalogFilePath = [self getWeblocCatalogFilePath];
+	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	[dict removeObjectForKey:url];
+	return [dict writeToFile:catalogFilePath atomically:YES];
+}
+
+- (NSString *) getWeblocFilenameFromCatalogForURL:(NSString *)url
+{
+	NSString *catalogFilePath = [self getWeblocCatalogFilePath];
+	NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:catalogFilePath];
+	NSString *filename = [dict objectForKey:url];
+	if (filename == nil)
+		return nil;
+	
+	// make sure the file exists
+	NSString *filePath = [self.weblocFilesFolderPath
+						  stringByAppendingPathComponent:filename];
+	if (![[NSFileManager defaultManager] fileExistsAtPath:filePath])
+	{
+		// we have an entry for this URL but the we can't find
+		// the file it points to. in desperation, go through
+		// the .webloc files folder and try to find a .webloc file
+		// that points to the same URL (this would happen if the
+		// user had manually renamed the file)
+		// 
+		NSString *renamedFilename = nil;
+		NSArray *weblocFolderContents = [[NSFileManager defaultManager]
+										 contentsOfDirectoryAtPath:self.weblocFilesFolderPath
+										 error:NULL];
+		if (weblocFolderContents != nil)
+		{
+			for (NSString *aFileName in weblocFolderContents)
+			{
+				NSString *aFilePath = [self.weblocFilesFolderPath stringByAppendingPathComponent:aFileName];
+				
+				if (![[[aFilePath pathExtension] lowercaseString] isEqualToString:@"webloc"])
+					continue;
+				
+				NSDictionary *weblocDict = [NSDictionary dictionaryWithContentsOfFile:aFilePath];
+				NSString *weblocTargetURL = [weblocDict objectForKey:@"URL"];
+				
+				if([url isEqualToString:weblocTargetURL])
+				{
+					renamedFilename = aFileName;
+					break;
+				}
+			}
+		}
+		
+		if (renamedFilename != nil)
+		{
+			// update catalog entry
+			[dict setObject:renamedFilename forKey:url];
+			[dict writeToFile:catalogFilePath atomically:YES];
+			return renamedFilename;
+		}
+		
+		// remove entry from catalog
+		[dict removeObjectForKey:url];
+		[dict writeToFile:catalogFilePath atomically:YES];
+		return nil;
+	}
+	
+	return filename;
+}
+
 
 - (NSString *) getWeblocFilePathForTitle:(NSString *)title
-									 URL:(NSString *)url
+									 URL:(NSString *)aUrl
 {
+	NSString *url = [[NSURL URLWithString:aUrl] absoluteString];
+	
 	// remove the anchor part of the URL (we want to consider only
 	// 'full' pages, not parts thereof)
 	NSRange hashRange = [url rangeOfString:@"#" options:NSBackwardsSearch];
 	if (hashRange.location != NSNotFound)
 		url = [url substringToIndex:hashRange.location];
+	
+	// check if we already have a catalog entry for this URL
+	NSString *filenameFromCatalog = [self getWeblocFilenameFromCatalogForURL:url];
+	if (filenameFromCatalog != nil)
+		return [self.weblocFilesFolderPath
+				stringByAppendingPathComponent:filenameFromCatalog];
 	
 	// 'clean up' the page title a bit before using it as a file name.
 	// the primary filename & path is what we'd like to call this webloc
@@ -465,6 +561,12 @@ static NSString* frontAppBundleID = nil;
 		useSecondaryFilename = YES;
 	}
 	
+	// 'primary' filename =   "Page Title.webloc"
+	// 'secondary' filename = "Page Title (http::host:path).webloc"
+	// 
+	// we try to use the primary version but in case of
+	// filename collisions we use the secondary one.
+	// 
 	NSString *primaryPath = [self.weblocFilesFolderPath
 							 stringByAppendingPathComponent:
 							 [primaryFilename stringByAppendingString:@".webloc"]
@@ -496,7 +598,10 @@ static NSString* frontAppBundleID = nil;
 		// make sure the URL matches as well:
 		NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:primaryPath];
 		if ([[d objectForKey:@"URL"] isEqual:url])
+		{
+			[self saveWeblocFilenameToCatalog:[primaryPath lastPathComponent] forURL:url];
 			return primaryPath;
+		}
 		newWeblocPath = secondaryPath;
 	}
 	
@@ -505,7 +610,10 @@ static NSString* frontAppBundleID = nil;
 		// make sure the URL matches as well:
 		NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:secondaryPath];
 		if ([[d objectForKey:@"URL"] isEqual:url])
+		{
+			[self saveWeblocFilenameToCatalog:[secondaryPath lastPathComponent] forURL:url];
 			return secondaryPath;
+		}
 		newWeblocPath = nil;
 	}
 	
@@ -516,11 +624,16 @@ static NSString* frontAppBundleID = nil;
 											forKey:@"URL"
 											];
 		[weblocContentsDict writeToFile:newWeblocPath atomically:YES];
+		[self saveWeblocFilenameToCatalog:[newWeblocPath lastPathComponent] forURL:url];
 		return newWeblocPath;
 	}
 	
 	// both the primary and secondary filenames/paths already exist
 	// but point to different URLs, so we don't know what to do.
+	// this shouldn't happen.
+	// 
+	// todo: add an incrementing number to the end of the filename to deal with this
+	// 
 	return nil;
 }
 
@@ -536,15 +649,28 @@ static NSString* frontAppBundleID = nil;
 	
 	for (NSString *filePath in self.filesToTag)
 	{
+		// don't delete files that don't have the extension ".webloc"
+		if (![[[filePath pathExtension] lowercaseString] isEqualToString:@"webloc"])
+			continue;
+		
+		// don't delete files that aren't in our webloc files folder
 		if (![[filePath stringByStandardizingPath]
 			  hasPrefix:[self.weblocFilesFolderPath stringByStandardizingPath]
 			  ])
 			continue;
 		
+		// don't delete files that have tags (or if we for some
+		// reason can't read its tags)
 		NSError *getTagsError = nil;
 		NSArray *tags = [OpenMeta getUserTags:filePath error:&getTagsError];
-		if (getTagsError != nil || [tags count] > 0)
+		if (getTagsError != nil || tags == nil || [tags count] > 0)
 			continue;
+		
+		// ok so now we've determined that we can delete
+		// this file
+		
+		NSDictionary *weblocDict = [NSDictionary dictionaryWithContentsOfFile:filePath];
+		NSString *weblocTargetURL = [weblocDict objectForKey:@"URL"];
 		
 		NSError *removeItemError = nil;
 		BOOL success = [[NSFileManager defaultManager]
@@ -557,6 +683,8 @@ static NSString* frontAppBundleID = nil;
 				  filePath, [removeItemError localizedDescription]
 				  );
 		}
+		else if (weblocTargetURL != nil)
+			[self removeURLFromWeblocCatalog:weblocTargetURL];
 	}
 }
 
