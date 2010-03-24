@@ -41,11 +41,19 @@ This record may also contain the field `title`, which, if included, will specify
 
 _Example #1: Return paths to two files and a custom title_
 
-        return {filePaths:{"/path/to/file1.ext", "/path/to/file2.ext"}, title:"2 SuperExtra App Documents"}
+    return {filePaths: {"/path/to/file1.ext",
+                        "/path/to/file2.ext"},
+            title: "2 SuperExtra App Documents"
+           }
 
 _Example #2: Return two web links_
 
-        return {webLinks:{{link:"http://hasseg.org", title:"Hasseg site"}, {link:"http://hasseg.org/tagger", title:"Tagger site"}}}
+    return {webLinks: {{link:"http://hasseg.org",
+                        title:"Hasseg site"},
+                       {link:"http://hasseg.org/tagger",
+                        title:"Tagger site"}
+                      }
+           }
 
 Also, any error messages a script throws will be shown to the user. For example:
 
