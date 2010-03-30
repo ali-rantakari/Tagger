@@ -32,7 +32,9 @@ You can also do this manually by copying the AppleScript file into the Scripts f
 Writing new Scripts
 ---------------------
 
-If you'd like to __write a front application script__ for an application, you just need to make sure that your script returns the correct kind of data to Tagger. What Tagger wants is a record with one of these two fields (i.e. not both):
+#### Return Value
+
+If you'd like to write a front application script for an application, you just need to make sure that your script __returns the correct kind of data to Tagger__. What Tagger wants is a record with one of these two fields (i.e. not both):
 
 - `filePaths` (containing _a list of full paths_ to the files to tag)
 - `webLinks` (containing _a list of records_ each of which should have the fields `link` (a URL string) and `title` (the title for the document that the link points to -- if the link points to a web page, this should be the title of that web page))
@@ -55,9 +57,17 @@ _Example #2: Return two web links_
                       }
            }
 
-Also, any error messages a script throws will be shown to the user. For example:
+__Important:__ Any of the identifiers used in the return record (`filePaths`, `webLinks`, `title` and `link`) might be defined in the AppleScript dictionaries of some of the applications you'd want to script, which is why it's a good idea to put statements like the above examples _outside of any "tell application" blocks_ &mdash; if one of the identifiers you're using to return data to Tagger is redefined by an app's dictionary and you're using that identifier inside the "tell application" block to construct the return value, Tagger won't recognize that part of it.
+
+
+#### Errors
+
+Any error messages a script throws will be shown to the user. For example:
 
     error "Can not get selection due to solar radiation"
+
+
+#### Submitting Your Script
 
 An example script for iTunes is included in the Tagger distribution package, along with a `Catalog.plist` file that contains an entry for this script.
 
