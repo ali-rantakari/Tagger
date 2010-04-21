@@ -22,7 +22,8 @@
 
 // TODO:
 // 
-// - Add OmniWeb support
+// - Rewrite the built-in applescripts in the same format as the
+//   front app scripts and use the same code to interpret them
 // 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
 // 
@@ -940,7 +941,8 @@ doCommandBySelector:(SEL)command
 	else if ([frontAppBundleID isEqualToString:SAFARI_BUNDLE_ID] ||
 			 [frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID] ||
 			 [frontAppBundleID isEqualToString:OPERA_BUNDLE_ID] ||
-			 [frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID] 
+			 [frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID] ||
+			 [frontAppBundleID isEqualToString:OMNIWEB_BUNDLE_ID]
 			 )
 	{
 		// try to get the current page's title and URL from Safari via AppleScript
@@ -967,6 +969,11 @@ doCommandBySelector:(SEL)command
 		{
 			getPageTitleASSource = GET_CURRENT_CAMINO_PAGE_TITLE_APPLESCRIPT;
 			getPageURLASSource = GET_CURRENT_CAMINO_PAGE_URL_APPLESCRIPT;
+		}
+		else if ([frontAppBundleID isEqualToString:OMNIWEB_BUNDLE_ID])
+		{
+			getPageTitleASSource = GET_CURRENT_OMNIWEB_PAGE_TITLE_APPLESCRIPT;
+			getPageURLASSource = GET_CURRENT_OMNIWEB_PAGE_URL_APPLESCRIPT;
 		}
 		
 		NSAppleScript *getPageTitleAS = [[NSAppleScript alloc] initWithSource:getPageTitleASSource];
@@ -1179,6 +1186,7 @@ doCommandBySelector:(SEL)command
     for (i = 1; i <= recordCount; i+=2)
 	{
 		NSString *key = [[[asOutput descriptorAtIndex:i] stringValue] lowercaseString];
+		DDLogInfo(@"  key = %@", key);
 		
 		// {filepaths:{"path1", "path2"}}
 		if ([key isEqualToString:@"filepaths"])
@@ -1194,6 +1202,7 @@ doCommandBySelector:(SEL)command
 		// {weblinks:{ {link:"http://url", title:"page"}, {link:"http://another-url", title:"another page"} }}
 		else if ([key isEqualToString:@"weblinks"])
 		{
+			DDLogInfo(@"  key is weblinks");
 			NSAppleEventDescriptor *webLinkListDescriptor = [asOutput descriptorAtIndex:i+1];
 			NSUInteger webLinkListCount = [webLinkListDescriptor numberOfItems];
 			if (webLinkListCount > 1)
@@ -1207,10 +1216,13 @@ doCommandBySelector:(SEL)command
 				NSAppleEventDescriptor *linkPropsDescriptor = [[webLinkListDescriptor descriptorAtIndex:k]
 																   descriptorForKeyword:keyASUserRecordFields];
 				NSUInteger linkPropsCount = [linkPropsDescriptor numberOfItems];
+				DDLogInfo(@"    webLinkListDescriptor = %@", webLinkListDescriptor);
+				DDLogInfo(@"    weblinks item #%i (count %i)", k, linkPropsCount);
 				NSUInteger m;
 				for (m = 1; m <= linkPropsCount; m+=2)
 				{
 					NSString *linkPropsKey = [[[linkPropsDescriptor descriptorAtIndex:m] stringValue] lowercaseString];
+					DDLogInfo(@"    linkPropsKey = %@", linkPropsKey);
 					if ([linkPropsKey isEqualToString:@"link"])
 						URLStr = [[linkPropsDescriptor descriptorAtIndex:m+1] stringValue];
 					else if ([linkPropsKey isEqualToString:@"title"])

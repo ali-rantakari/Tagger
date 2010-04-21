@@ -26,6 +26,7 @@
 #define FIREFOX_BUNDLE_ID		@"org.mozilla.firefox"
 #define CAMINO_BUNDLE_ID		@"org.mozilla.camino"
 #define OPERA_BUNDLE_ID			@"com.operasoftware.Opera"
+#define OMNIWEB_BUNDLE_ID		@"com.omnigroup.OmniWeb5"
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
 #define TAGLISTS_BUNDLE_ID		@"org.hasseg.TagLists"
 
@@ -91,6 +92,11 @@
 	@"tell application \"Opera\" to return item 2 of (GetWindowInfo of window 1)"
 #define GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT \
 	@"tell application \"Opera\" to return item 1 of (GetWindowInfo of window 1)"
+
+#define GET_CURRENT_OMNIWEB_PAGE_TITLE_APPLESCRIPT \
+	@"tell application \"OmniWeb\" to return title of active tab of front browser"
+#define GET_CURRENT_OMNIWEB_PAGE_URL_APPLESCRIPT \
+	@"tell application \"OmniWeb\" to return address of active tab of front browser"
 
 #define GET_CURRENT_CAMINO_PAGE_TITLE_APPLESCRIPT \
 	@"tell application \"Camino\"\n\
