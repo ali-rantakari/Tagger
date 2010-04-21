@@ -2,10 +2,10 @@
 <archive type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="7.10">
 	<data>
 		<int key="IBDocument.SystemTarget">1050</int>
-		<string key="IBDocument.SystemVersion">10C540</string>
+		<string key="IBDocument.SystemVersion">10D573</string>
 		<string key="IBDocument.InterfaceBuilderVersion">740</string>
-		<string key="IBDocument.AppKitVersion">1038.25</string>
-		<string key="IBDocument.HIToolboxVersion">458.00</string>
+		<string key="IBDocument.AppKitVersion">1038.29</string>
+		<string key="IBDocument.HIToolboxVersion">460.00</string>
 		<object class="NSMutableDictionary" key="IBDocument.PluginVersions">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin</string>
 			<string key="NS.object.0">740</string>
@@ -14,12 +14,12 @@
 			<bool key="EncodedWithXMLCoder">YES</bool>
 			<integer value="516"/>
 			<integer value="1080"/>
+			<integer value="375"/>
+			<integer value="840"/>
+			<integer value="744"/>
 			<integer value="950"/>
 			<integer value="974"/>
 			<integer value="644"/>
-			<integer value="840"/>
-			<integer value="375"/>
-			<integer value="745"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -1035,11 +1035,6 @@
 				<string key="NSMaxSize">{3.40282e+38, 3.40282e+38}</string>
 			</object>
 			<object class="NSUserDefaultsController" id="436072578">
-				<object class="NSMutableArray" key="NSDeclaredKeys">
-					<bool key="EncodedWithXMLCoder">YES</bool>
-					<string>automaticallyChecksForUpdates</string>
-					<string>automaticallyCheckForUpdates</string>
-				</object>
 				<bool key="NSSharedInstance">YES</bool>
 			</object>
 			<object class="NSWindowTemplate" id="52059341">
@@ -1117,7 +1112,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="729227488">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">1346371584</int>
-								<string type="base64-UTF8" key="NSContents">Q29weXJpZ2h0IMKpIDIwMDgtMjAwOSBBbGkgUmFudGFrYXJpLgoKVGFnZ2VyIGlzIGxpY2Vuc2VkIHVu
+								<string type="base64-UTF8" key="NSContents">Q29weXJpZ2h0IMKpIDIwMDgtMjAxMCBBbGkgUmFudGFrYXJpLgoKVGFnZ2VyIGlzIGxpY2Vuc2VkIHVu
 ZGVyIHRoZSBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSwgdmVyc2lvbiAyLgoKVGFnZ2VyIGluY2x1
 ZGVzIE9wZW5NZXRhIGNvZGUgYnkgVG9tIEFuZGVyc2VuLCBOU0ltYWdlK1F1aWNrbG9vayBjb2RlIGJ5
 IE1hdHQgR2VtbWVsbCwgTGV0c01vdmUgY29kZSBieSBBbmR5IEtpbSwgSm9obiBCcmF5dG9uLCBDaGFk
@@ -4583,6 +4578,7 @@ ZGQgU2NyaXB0Ii4</string>
 					<string>1100.ImportedFromIB2</string>
 					<string>1103.IBPluginDependency</string>
 					<string>1104.IBPluginDependency</string>
+					<string>1118.IBPluginDependency</string>
 					<string>375.IBAttributePlaceholdersKey</string>
 					<string>375.IBEditorWindowLastContentRect</string>
 					<string>375.IBPluginDependency</string>
@@ -4893,6 +4889,7 @@ ZGQgU2NyaXB0Ii4</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="1"/>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<object class="NSMutableDictionary">

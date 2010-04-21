@@ -2,7 +2,7 @@
 //  NSArray+NSTableViewDataSource.m
 //  Tagger
 //
-// Copyright (C) 2008-2009 Ali Rantakari
+// Copyright (C) 2008-2010 Ali Rantakari
 // You can contact the author at http://hasseg.org
 // 
 // This program is free software; you can redistribute it and/or
