@@ -42,11 +42,16 @@
 	IBOutlet NSTextField *infoLabel;
 	IBOutlet NSTextField *filenameLabel;
 	IBOutlet NSTextField *fileCountLabel;
-	IBOutlet NSButton *updateButton;
 	IBOutlet NSButton *okButton;
 	IBOutlet NSTokenField *tagsField;
 	IBOutlet NSProgressIndicator *progressIndicator;
 	IBOutlet NSTextField *aboutWindowVersionLabel;
+	
+	IBOutlet NSButton *updateButton;
+	IBOutlet NSProgressIndicator *updateProgressIndicator;
+	IBOutlet NSTextField *updateCheckLabel;
+	BOOL shouldInformUserIfNoUpdates;
+	BOOL updateFound;
 	
 	BOOL setTagsAndQuitCalled;
 	
@@ -83,7 +88,6 @@
 - (IBAction) aboutSelected:(id)sender;
 - (IBAction) preferencesSelected:(id)sender;
 - (IBAction) okSelected:(id)sender;
-- (IBAction) updateSelected:(id)sender;
 - (IBAction) showFileListSelected:(id)sender;
 - (IBAction) closeFileListSelected:(id)sender;
 - (IBAction) goToWebsiteSelected:(id)sender;
@@ -98,5 +102,8 @@
 - (void) terminateAppSafely;
 
 - (void) checkForUpdatesSilently;
+
+- (IBAction) checkForUpdates:(id)sender;
+- (IBAction) updateApp:(id)sender;
 
 @end

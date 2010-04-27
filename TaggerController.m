@@ -698,6 +698,13 @@ static NSString* frontAppBundleID = nil;
 #pragma mark -
 #pragma mark Misc. UI Handlers etc.
 
+- (BOOL) respondsToSelector:(SEL)aSelector
+{
+	if (aSelector == @selector(checkForUpdates:))
+		return !updateFound;
+	return [super respondsToSelector:aSelector];
+}
+
 - (IBAction) aboutSelected:(id)sender
 {
 	[aboutWindow center];
@@ -1682,6 +1689,7 @@ doCommandBySelector:(SEL)command
 		return;
 	}
 	
+	shouldInformUserIfNoUpdates = NO;
 	[[SUUpdater sharedUpdater] setDelegate:self];
 	[[SUUpdater sharedUpdater] checkForUpdateInformation];
 	DDLogInfo(@"checking for updates...");
@@ -1690,6 +1698,10 @@ doCommandBySelector:(SEL)command
   - (void) updater:(SUUpdater *)updater
 didFindValidUpdate:(SUAppcastItem *)update
 {
+	[updateCheckLabel setHidden:YES];
+	[updateProgressIndicator setHidden:YES];
+	[updateProgressIndicator stopAnimation:self];
+	
 	NSString *currentVersionString = [self getVersionString];
 	NSString *latestVersionString = [update versionString];
 	
@@ -1704,14 +1716,28 @@ didFindValidUpdate:(SUAppcastItem *)update
 				 currentVersionString
 				 ]
 	 ];
+	updateFound = YES;
 	
 	[kDefaults setObject:[NSDate date] forKey:kDefaultsKey_LastUpdateCheckDate];
 }
 
 - (void) updaterDidNotFindUpdate:(SUUpdater *)update
 {
+	[updateCheckLabel setHidden:YES];
+	[updateProgressIndicator setHidden:YES];
+	[updateProgressIndicator stopAnimation:self];
+	
 	DDLogInfo(@"no update found.");
 	[kDefaults setObject:[NSDate date] forKey:kDefaultsKey_LastUpdateCheckDate];
+	
+	if (shouldInformUserIfNoUpdates)
+		NSRunAlertPanel(@"You're up to date!",
+						[NSString stringWithFormat:
+						 @"Tagger %@ is currently the newest version available.",
+						 [self getVersionString]
+						 ],
+						@"OK",
+						nil, nil);
 }
 
 - (void) updaterWillRelaunchApplication:(SUUpdater *)updater
@@ -1721,9 +1747,23 @@ didFindValidUpdate:(SUAppcastItem *)update
 
 
 
-- (IBAction) updateSelected:(id)sender
+- (IBAction) checkForUpdates:(id)sender
 {
-	[[SUUpdater sharedUpdater] checkForUpdates:self];
+	DDLogInfo(@"searching for updates...");
+	shouldInformUserIfNoUpdates = YES;
+	[updateButton setHidden: YES];
+	[updateCheckLabel setHidden:NO];
+	[updateProgressIndicator setHidden:NO];
+	[updateProgressIndicator startAnimation:self];
+	[[SUUpdater sharedUpdater] setDelegate:self];
+	[[SUUpdater sharedUpdater] checkForUpdateInformation];
+}
+
+- (IBAction) updateApp:(id)sender
+{
+	DDLogInfo(@"updating app");
+	[[SUUpdater sharedUpdater] setDelegate:self];
+	[[SUUpdater sharedUpdater] checkForUpdatesInBackground];
 }
 
 

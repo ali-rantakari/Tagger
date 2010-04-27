@@ -32,6 +32,8 @@
 		C996AE8C10CB1CC4003F9433 /* Sparkle.framework in Copy Files: Frameworks */ = {isa = PBXBuildFile; fileRef = C996AE7A10CB1C9B003F9433 /* Sparkle.framework */; };
 		C9C8DAA7115A77FD006B57E8 /* dsa_pub.pem in Resources */ = {isa = PBXBuildFile; fileRef = C9C8DAA6115A77FD006B57E8 /* dsa_pub.pem */; };
 		C9D85E940E012D3900A20C1D /* Tagger.icns in Resources */ = {isa = PBXBuildFile; fileRef = C9D85E930E012D3900A20C1D /* Tagger.icns */; };
+		C9E5D60E11879F6900AD37CA /* BGHUDAppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E5D60D11879F6900AD37CA /* BGHUDAppKit.framework */; };
+		C9E5D63211879F7E00AD37CA /* BGHUDAppKit.framework in Copy Files: Frameworks */ = {isa = PBXBuildFile; fileRef = C9E5D60D11879F6900AD37CA /* BGHUDAppKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -61,6 +63,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				C9E5D63211879F7E00AD37CA /* BGHUDAppKit.framework in Copy Files: Frameworks */,
 				C996AE8C10CB1CC4003F9433 /* Sparkle.framework in Copy Files: Frameworks */,
 			);
 			name = "Copy Files: Frameworks";
@@ -113,6 +116,7 @@
 		C9CAF1D8100821DA00328AFF /* TaggerDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerDefines.h; sourceTree = "<group>"; };
 		C9D85E930E012D3900A20C1D /* Tagger.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Tagger.icns; sourceTree = "<group>"; };
 		C9DB849810C1C900001D0ABC /* TaggerAppleScripts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TaggerAppleScripts.h; sourceTree = "<group>"; };
+		C9E5D60D11879F6900AD37CA /* BGHUDAppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = BGHUDAppKit.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +129,7 @@
 				C93B84870E047C730062C273 /* QuickLook.framework in Frameworks */,
 				C91647C50FDDA8ED00B6FA19 /* Security.framework in Frameworks */,
 				C996AE7B10CB1C9B003F9433 /* Sparkle.framework in Frameworks */,
+				C9E5D60E11879F6900AD37CA /* BGHUDAppKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -154,6 +159,7 @@
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C9E5D60D11879F6900AD37CA /* BGHUDAppKit.framework */,
 				C996AE7A10CB1C9B003F9433 /* Sparkle.framework */,
 				C91647C40FDDA8ED00B6FA19 /* Security.framework */,
 				C93B84860E047C730062C273 /* QuickLook.framework */,
@@ -275,6 +281,7 @@
 				8D11072E0486CEB800E47090 /* Frameworks */,
 				C98A7F4F10B05DD900D0C2CE /* Copy Files: Library Spotlight */,
 				C996AE9510CB1CC9003F9433 /* Copy Files: Frameworks */,
+				C9E5D6AD1187A95100AD37CA /* Run Script: Rm BGHUD IBPlugin */,
 			);
 			buildRules = (
 			);
@@ -318,6 +325,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C9E5D6AD1187A95100AD37CA /* Run Script: Rm BGHUD IBPlugin */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			comments = "Remove BGHUDAppKit Framework's IB Plugin (not needed in app bundle)";
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script: Rm BGHUD IBPlugin";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "rm -Rf \"${CONFIGURATION_BUILD_DIR}/${WRAPPER_NAME}/Contents/Frameworks/BGHUDAppKit.framework/Versions/Current/Resources\"";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		8D11072C0486CEB800E47090 /* Sources */ = {
