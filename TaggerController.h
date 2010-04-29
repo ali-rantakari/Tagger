@@ -51,7 +51,9 @@
 	IBOutlet NSProgressIndicator *updateProgressIndicator;
 	IBOutlet NSTextField *updateCheckLabel;
 	BOOL shouldInformUserIfNoUpdates;
-	BOOL updateFound;
+	BOOL allowManualUpdateCheck;
+	BOOL updatesExistCheckInProgress;
+	NSInvocation *installUpdateInvocation;
 	
 	BOOL setTagsAndQuitCalled;
 	
@@ -73,6 +75,7 @@
 @property(copy) NSString *appDataDirPath;
 @property(copy) NSString *scriptsDirPath;
 @property(retain) NSMutableDictionary *scriptsCatalog;
+@property(retain) NSInvocation *installUpdateInvocation;
 
 
 - (NSString *) getVersionString;

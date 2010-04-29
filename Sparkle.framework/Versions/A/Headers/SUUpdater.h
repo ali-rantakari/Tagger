@@ -12,16 +12,21 @@
 #import <Sparkle/SUVersionComparisonProtocol.h>
 
 @class SUUpdateDriver, SUAppcastItem, SUHost, SUAppcast;
-@interface SUUpdater : NSObject {
+@interface SUUpdater : NSObject
+{
+@private
 	NSTimer *checkTimer;
 	SUUpdateDriver *driver;
-	
+
+	NSString *customUserAgentString;
 	SUHost *host;
 	IBOutlet id delegate;
 }
 
 + (SUUpdater *)sharedUpdater;
 + (SUUpdater *)updaterForBundle:(NSBundle *)bundle;
+- initForBundle:(NSBundle *)bundle;
+
 - (NSBundle *)hostBundle;
 
 - (void)setDelegate:(id)delegate;
@@ -35,6 +40,9 @@
 
 - (void)setFeedURL:(NSURL *)feedURL;
 - (NSURL *)feedURL;
+
+- (void)setUserAgentString:(NSString *)userAgent;
+- (NSString *)userAgentString;
 
 - (void)setSendsSystemProfile:(BOOL)sendsSystemProfile;
 - (BOOL)sendsSystemProfile;
@@ -57,6 +65,8 @@
 // This begins a "probing" check for updates which will not actually offer to update to that version. The delegate methods, though,
 // (up to updater:didFindValidUpdate: and updaterDidNotFindUpdate:), are called, so you can use that information in your UI.
 - (void)checkForUpdateInformation;
+
+- (void)checkForUpdatesWithNoStatusUIAndDriverDelegate:(id)driverDelegate;
 
 // Call this to appropriately schedule or cancel the update checking timer according to the preferences for time interval and automatic checks. This call does not change the date of the next check, but only the internal NSTimer.
 - (void)resetUpdateCycle;

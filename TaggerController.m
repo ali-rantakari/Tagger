@@ -44,7 +44,9 @@
 #import "HGVersionNumberCompare.h"
 #import "ScriptWindowController.h"
 #import "TaggerAppleScripts.h"
+
 #import <Sparkle/Sparkle.h>
+#import <Sparkle/HGNoStatusUIUpdateDriverDelegate.h>
 
 
 #define NO_FILES_TO_TAG_MSG @"Could not get files to tag.\n\
@@ -97,6 +99,7 @@ static NSString* frontAppBundleID = nil;
 @synthesize appDataDirPath;
 @synthesize scriptsDirPath;
 @synthesize scriptsCatalog;
+@synthesize installUpdateInvocation;
 
 
 + (void) load
@@ -132,6 +135,8 @@ static NSString* frontAppBundleID = nil;
 	
 	self.filesToTag = [NSMutableArray array];
 	self.customTitle = nil;
+	
+	allowManualUpdateCheck = YES;
 	
 	@try
 	{
@@ -285,6 +290,7 @@ static NSString* frontAppBundleID = nil;
 	self.appDataDirPath = nil;
 	self.scriptsDirPath = nil;
 	self.scriptsCatalog = nil;
+	self.installUpdateInvocation = nil;
 	
 	if (frontAppBundleID != nil)
 		[frontAppBundleID release];
@@ -701,7 +707,7 @@ static NSString* frontAppBundleID = nil;
 - (BOOL) respondsToSelector:(SEL)aSelector
 {
 	if (aSelector == @selector(checkForUpdates:))
-		return !updateFound;
+		return allowManualUpdateCheck;
 	return [super respondsToSelector:aSelector];
 }
 
@@ -1689,6 +1695,7 @@ doCommandBySelector:(SEL)command
 		return;
 	}
 	
+	updatesExistCheckInProgress = YES;
 	shouldInformUserIfNoUpdates = NO;
 	[[SUUpdater sharedUpdater] setDelegate:self];
 	[[SUUpdater sharedUpdater] checkForUpdateInformation];
@@ -1698,6 +1705,9 @@ doCommandBySelector:(SEL)command
   - (void) updater:(SUUpdater *)updater
 didFindValidUpdate:(SUAppcastItem *)update
 {
+	if (!updatesExistCheckInProgress)
+		return;
+	
 	[updateCheckLabel setHidden:YES];
 	[updateProgressIndicator setHidden:YES];
 	[updateProgressIndicator stopAnimation:self];
@@ -1706,8 +1716,7 @@ didFindValidUpdate:(SUAppcastItem *)update
 	NSString *latestVersionString = [update versionString];
 	
 	DDLogInfo(@"update found! (latest: %@ current: %@)", latestVersionString, currentVersionString);
-	[updateButton setEnabled: YES];
-	[updateButton setHidden: NO];
+	[updateButton setTitle:@"Update available!"];
 	[updateButton
 	 setToolTip:[NSString
 				 stringWithFormat:
@@ -1716,13 +1725,18 @@ didFindValidUpdate:(SUAppcastItem *)update
 				 currentVersionString
 				 ]
 	 ];
-	updateFound = YES;
+	[updateButton setEnabled: YES];
+	[updateButton setHidden: NO];
+	allowManualUpdateCheck = NO;
 	
 	[kDefaults setObject:[NSDate date] forKey:kDefaultsKey_LastUpdateCheckDate];
 }
 
 - (void) updaterDidNotFindUpdate:(SUUpdater *)update
 {
+	if (!updatesExistCheckInProgress)
+		return;
+	
 	[updateCheckLabel setHidden:YES];
 	[updateProgressIndicator setHidden:YES];
 	[updateProgressIndicator stopAnimation:self];
@@ -1750,6 +1764,7 @@ didFindValidUpdate:(SUAppcastItem *)update
 - (IBAction) checkForUpdates:(id)sender
 {
 	DDLogInfo(@"searching for updates...");
+	updatesExistCheckInProgress = YES;
 	shouldInformUserIfNoUpdates = YES;
 	[updateButton setHidden: YES];
 	[updateCheckLabel setHidden:NO];
@@ -1761,11 +1776,99 @@ didFindValidUpdate:(SUAppcastItem *)update
 
 - (IBAction) updateApp:(id)sender
 {
+	if (self.installUpdateInvocation != nil)
+	{
+		[self.installUpdateInvocation invoke];
+		return;
+	}
+	
+	if ([[SUUpdater sharedUpdater] updateInProgress])
+		return;
 	DDLogInfo(@"updating app");
+	updatesExistCheckInProgress = NO;
+	[updateButton setHidden: YES];
+	[updateCheckLabel setStringValue:@"Downloading info..."];
+	[updateCheckLabel setHidden:NO];
+	[updateProgressIndicator setHidden:NO];
+	[updateProgressIndicator startAnimation:self];
 	[[SUUpdater sharedUpdater] setDelegate:self];
-	[[SUUpdater sharedUpdater] checkForUpdatesInBackground];
+	[[SUUpdater sharedUpdater] checkForUpdatesWithNoStatusUIAndDriverDelegate:self];
 }
 
+
+
+- (void)updateDriverWillStartDownloadingUpdate
+{
+	[updateCheckLabel setStringValue:@"Downloading update..."];
+	[updateProgressIndicator setIndeterminate:YES];
+}
+
+- (void)updateDriverDidReceiveExpectedDownloadLength:(double)length
+{
+	if (length == 0)
+		return;
+	[updateProgressIndicator setIndeterminate:NO];
+	[updateProgressIndicator setMaxValue:length];
+	[updateProgressIndicator setDoubleValue:0];
+}
+
+- (void)updateDriverDidDownloadDataOfLength:(double)length
+{
+	[updateProgressIndicator setDoubleValue:[updateProgressIndicator doubleValue]+length];
+}
+
+- (void)updateDriverWillStartExtractingUpdate
+{
+	[updateCheckLabel setStringValue:@"Extracting update..."];
+	[updateProgressIndicator setIndeterminate:YES];
+}
+
+- (void)updateDriverDidReceiveExpectedExtractionLength:(double)length
+{
+	if (length == 0)
+		return;
+	[updateProgressIndicator setIndeterminate:NO];
+	[updateProgressIndicator setMaxValue:length];
+	[updateProgressIndicator setDoubleValue:0];
+}
+
+- (void)updateDriverDidExtractDataOfLength:(double)length
+{
+	[updateProgressIndicator setDoubleValue:[updateProgressIndicator doubleValue]+length];
+}
+
+- (void)updateDriverReadyToInstallUpdateWithInvocation:(NSInvocation *)invocation
+{
+	[updateButton setHidden:NO];
+	[updateButton setTitle:@"Install update and restart"];
+	[updateButton setToolTip:nil];
+	[updateCheckLabel setHidden:YES];
+	[updateProgressIndicator setHidden:YES];
+	[updateProgressIndicator stopAnimation:self];
+	self.installUpdateInvocation = invocation;
+}
+
+- (void)updateDriverWillStartInstallingUpdate
+{
+	[updateButton setHidden:YES];
+	[updateCheckLabel setHidden:NO];
+	[updateProgressIndicator setHidden:NO];
+	[updateProgressIndicator setIndeterminate:YES];
+	[updateProgressIndicator startAnimation:self];
+	[tagsField setEnabled:NO];
+	[okButton setEnabled:NO];
+	[updateCheckLabel setStringValue:@"Installing..."];
+}
+
+- (void)updateDriverDidAbortUpdate
+{
+	[updateButton setHidden:YES];
+	[updateCheckLabel setHidden:YES];
+	[updateProgressIndicator setHidden:YES];
+	[updateProgressIndicator stopAnimation:self];
+	allowManualUpdateCheck = YES;
+	self.installUpdateInvocation = nil;
+}
 
 
 
