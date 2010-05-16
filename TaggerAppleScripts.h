@@ -89,9 +89,9 @@
 	end tell"
 
 #define GET_CURRENT_OPERA_PAGE_TITLE_APPLESCRIPT \
-	@"tell application \"Opera\" to return item 2 of (GetWindowInfo of window 1)"
+	@"tell application \"Opera\" to return name of front document as string"
 #define GET_CURRENT_OPERA_PAGE_URL_APPLESCRIPT \
-	@"tell application \"Opera\" to return item 1 of (GetWindowInfo of window 1)"
+	@"tell application \"Opera\" to return URL of front document as string"
 
 #define GET_CURRENT_OMNIWEB_PAGE_TITLE_APPLESCRIPT \
 	@"tell application \"OmniWeb\" to return title of active tab of front browser"
