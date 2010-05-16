@@ -22,8 +22,13 @@
 
 // TODO:
 // 
+// - Add SFBCrashReporter (first make it so that it only zips up the
+//   crash logs if there are more than one)
+// 
 // - Rewrite the built-in applescripts in the same format as the
 //   front app scripts and use the same code to interpret them
+// 
+// - Recently used tags as clickable elements (user ref: Michael H.)
 // 
 // - Fix the HUD Token Field caret problem: http://code.google.com/p/bghudappkit/issues/detail?id=27
 // 
