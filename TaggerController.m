@@ -653,6 +653,8 @@ static NSString* frontAppBundleID = nil;
 
 - (void) deleteWeblocFilesIfNecessary
 {
+	DDLogInfo(@"deleteWeblocFilesIfNecessary called.");
+	
 	// check if any of the tagged files are .webloc files we've
 	// created, and delete them if they don't have any tags
 	
@@ -661,22 +663,29 @@ static NSString* frontAppBundleID = nil;
 	
 	for (NSString *filePath in self.filesToTag)
 	{
+		DDLogInfo(@"webloc delete check: %@", filePath);
+		
 		// don't delete files that don't have the extension ".webloc"
 		if (![[[filePath pathExtension] lowercaseString] isEqualToString:@"webloc"])
 			continue;
+		DDLogInfo(@"has webloc ext...");
 		
 		// don't delete files that aren't in our webloc files folder
 		if (![[filePath stringByStandardizingPath]
 			  hasPrefix:[self.weblocFilesFolderPath stringByStandardizingPath]
 			  ])
 			continue;
+		DDLogInfo(@"is in webloc folder...");
 		
 		// don't delete files that have tags (or if we for some
 		// reason can't read its tags)
 		NSError *getTagsError = nil;
 		NSArray *tags = [OpenMeta getUserTags:filePath error:&getTagsError];
-		if (getTagsError != nil || tags == nil || [tags count] > 0)
+		DDLogInfo(@"getTagsError = %@", getTagsError);
+		DDLogInfo(@"tags = %@", tags);
+		if (getTagsError != nil || (tags != nil && [tags count] > 0))
 			continue;
+		DDLogInfo(@"has no tags -> can delete.");
 		
 		// ok so now we've determined that we can delete
 		// this file
@@ -1549,6 +1558,9 @@ doCommandBySelector:(SEL)command
 
 - (void) cleanUpBeforeQuitting
 {
+	if (cleanupStarted)
+		return;
+	cleanupStarted = YES;
 	[OpenMetaPrefs synchPrefs];
 	[OpenMetaBackup appIsTerminating];
 	[self deleteWeblocFilesIfNecessary];

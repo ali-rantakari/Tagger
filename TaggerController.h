@@ -56,6 +56,7 @@
 	NSInvocation *installUpdateInvocation;
 	
 	BOOL setTagsAndQuitCalled;
+	BOOL cleanupStarted;
 	
 	NSMutableArray *filesToTag;
 	NSArray *originalTags;
