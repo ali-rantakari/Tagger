@@ -526,16 +526,20 @@ static NSString* frontAppBundleID = nil;
 - (NSString *) getWeblocFilePathForTitle:(NSString *)title
 									 URL:(NSString *)aUrl
 {
-	NSString *url = [[NSURL URLWithString:aUrl] absoluteString];
+	NSURL *url = [NSURL URLWithString:aUrl];
+	NSString *urlStr = [url absoluteString];
+	
+	if ([url scheme] == nil)
+		urlStr = [@"http://" stringByAppendingString:urlStr];
 	
 	// remove the anchor part of the URL (we want to consider only
 	// 'full' pages, not parts thereof)
-	NSRange hashRange = [url rangeOfString:@"#" options:NSBackwardsSearch];
+	NSRange hashRange = [urlStr rangeOfString:@"#" options:NSBackwardsSearch];
 	if (hashRange.location != NSNotFound)
-		url = [url substringToIndex:hashRange.location];
+		urlStr = [urlStr substringToIndex:hashRange.location];
 	
 	// check if we already have a catalog entry for this URL
-	NSString *filenameFromCatalog = [self getWeblocFilenameFromCatalogForURL:url];
+	NSString *filenameFromCatalog = [self getWeblocFilenameFromCatalogForURL:urlStr];
 	if (filenameFromCatalog != nil)
 		return [self.weblocFilesFolderPath
 				stringByAppendingPathComponent:filenameFromCatalog];
@@ -584,7 +588,7 @@ static NSString* frontAppBundleID = nil;
 							 [primaryFilename stringByAppendingString:@".webloc"]
 							 ];
 	
-	NSString *urlForSecondaryFilename = [url
+	NSString *urlForSecondaryFilename = [urlStr
 										 stringByReplacingOccurrencesOfString:@"://"
 										 withString:@"::"
 										 ];
@@ -609,9 +613,9 @@ static NSString* frontAppBundleID = nil;
 	{
 		// make sure the URL matches as well:
 		NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:primaryPath];
-		if ([[d objectForKey:@"URL"] isEqual:url])
+		if ([[d objectForKey:@"URL"] isEqual:urlStr])
 		{
-			[self saveWeblocFilenameToCatalog:[primaryPath lastPathComponent] forURL:url];
+			[self saveWeblocFilenameToCatalog:[primaryPath lastPathComponent] forURL:urlStr];
 			return primaryPath;
 		}
 		newWeblocPath = secondaryPath;
@@ -621,9 +625,9 @@ static NSString* frontAppBundleID = nil;
 	{
 		// make sure the URL matches as well:
 		NSDictionary *d = [NSDictionary dictionaryWithContentsOfFile:secondaryPath];
-		if ([[d objectForKey:@"URL"] isEqual:url])
+		if ([[d objectForKey:@"URL"] isEqual:urlStr])
 		{
-			[self saveWeblocFilenameToCatalog:[secondaryPath lastPathComponent] forURL:url];
+			[self saveWeblocFilenameToCatalog:[secondaryPath lastPathComponent] forURL:urlStr];
 			return secondaryPath;
 		}
 		newWeblocPath = nil;
@@ -632,11 +636,11 @@ static NSString* frontAppBundleID = nil;
 	if (newWeblocPath != nil)
 	{
 		NSDictionary *weblocContentsDict = [NSDictionary
-											dictionaryWithObject:url
+											dictionaryWithObject:urlStr
 											forKey:@"URL"
 											];
 		[weblocContentsDict writeToFile:newWeblocPath atomically:YES];
-		[self saveWeblocFilenameToCatalog:[newWeblocPath lastPathComponent] forURL:url];
+		[self saveWeblocFilenameToCatalog:[newWeblocPath lastPathComponent] forURL:urlStr];
 		return newWeblocPath;
 	}
 	
