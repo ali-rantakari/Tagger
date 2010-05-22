@@ -27,6 +27,8 @@
 #define CAMINO_BUNDLE_ID		@"org.mozilla.camino"
 #define OPERA_BUNDLE_ID			@"com.operasoftware.Opera"
 #define OMNIWEB_BUNDLE_ID		@"com.omnigroup.OmniWeb5"
+#define CHROME_BUNDLE_ID		@"com.google.Chrome"
+#define CHROMIUM_BUNDLE_ID		@"org.chromium.Chromium"
 #define PATH_FINDER_BUNDLE_ID	@"com.cocoatech.PathFinder"
 #define TAGLISTS_BUNDLE_ID		@"org.hasseg.TagLists"
 
@@ -114,6 +116,53 @@
 			return \"\"\n\
 		end if\n\
 	end tell"
+
+#define GET_CURRENT_CHROME_PAGE_TITLE_APPLESCRIPT \
+	@"tell application \"System Events\"\n\
+		try\n\
+			tell process \"Google Chrome\" to return title of front window\n\
+		on error\n\
+			activate\n\
+			display dialog \"Could not get page title from Google Chrome.\n\nNote: Support for Chrome and Chromium is experimental (read: hacky) due to their lack of a proper AppleScript dictionary.\n\nIf the page is still loading, please try again when it's completely loaded.\n\nOtherwise you can try switching to another tab and back before trying again.\"\
+				with title \"Error\" buttons \"Ok\"\n\
+			return null\n\
+		end try\n\
+	end tell"
+#define GET_CURRENT_CHROME_PAGE_URL_APPLESCRIPT \
+	@"tell application \"System Events\"\n\
+		try\n\
+			tell process \"Google Chrome\" to return value of text field 1 of tool bar 1 of window 1\n\
+		on error\n\
+			activate\n\
+			display dialog \"Could not get page URL from Google Chrome.\n\nNote: Support for Chrome and Chromium is experimental (read: hacky) due to their lack of a proper AppleScript dictionary.\n\nIf the page is still loading, please try again when it's completely loaded.\n\nOtherwise you can try switching to another tab and back before trying again.\"\
+				with title \"Error\" buttons \"Ok\"\n\
+			return null\n\
+		end try\n\
+	end tell"
+
+#define GET_CURRENT_CHROMIUM_PAGE_TITLE_APPLESCRIPT \
+	@"tell application \"System Events\"\n\
+		try\n\
+			tell process \"Chromium\" to return title of front window\n\
+		on error\n\
+			activate\n\
+			display dialog \"Could not get page title from Chromium.\n\nNote: Support for Chrome and Chromium is experimental (read: hacky) due to their lack of a proper AppleScript dictionary.\n\nIf the page is still loading, please try again when it's completely loaded.\n\nOtherwise you can try switching to another tab and back before trying again.\"\
+				with title \"Error\" buttons \"Ok\"\n\
+			return null\n\
+		end try\n\
+	end tell"
+#define GET_CURRENT_CHROMIUM_PAGE_URL_APPLESCRIPT \
+	@"tell application \"System Events\"\n\
+		try\n\
+			tell process \"Chromium\" to return value of text field 1 of tool bar 1 of window 1\n\
+		on error\n\
+			activate\n\
+			display dialog \"Could not get page URL from Chromium.\n\nNote: Support for Chrome and Chromium is experimental (read: hacky) due to their lack of a proper AppleScript dictionary.\n\nIf the page is still loading, please try again when it's completely loaded.\n\nOtherwise you can try switching to another tab and back before trying again.\"\
+				with title \"Error\" buttons \"Ok\"\n\
+			return null\n\
+		end try\n\
+	end tell"
+
 
 #define MAIL_GET_FIRST_SELECTED_EMAIL_SUBJECT_APPLESCRIPT \
 	@"tell application \"Mail\" to return (subject of first item of (selection as list))"

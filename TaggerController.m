@@ -960,6 +960,8 @@ doCommandBySelector:(SEL)command
 			 [frontAppBundleID isEqualToString:FIREFOX_BUNDLE_ID] ||
 			 [frontAppBundleID isEqualToString:OPERA_BUNDLE_ID] ||
 			 [frontAppBundleID isEqualToString:CAMINO_BUNDLE_ID] ||
+			 [frontAppBundleID isEqualToString:CHROME_BUNDLE_ID] ||
+			 [frontAppBundleID isEqualToString:CHROMIUM_BUNDLE_ID] ||
 			 [frontAppBundleID isEqualToString:OMNIWEB_BUNDLE_ID]
 			 )
 	{
@@ -992,6 +994,16 @@ doCommandBySelector:(SEL)command
 		{
 			getPageTitleASSource = GET_CURRENT_OMNIWEB_PAGE_TITLE_APPLESCRIPT;
 			getPageURLASSource = GET_CURRENT_OMNIWEB_PAGE_URL_APPLESCRIPT;
+		}
+		else if ([frontAppBundleID isEqualToString:CHROME_BUNDLE_ID])
+		{
+			getPageTitleASSource = GET_CURRENT_CHROME_PAGE_TITLE_APPLESCRIPT;
+			getPageURLASSource = GET_CURRENT_CHROME_PAGE_URL_APPLESCRIPT;
+		}
+		else if ([frontAppBundleID isEqualToString:CHROMIUM_BUNDLE_ID])
+		{
+			getPageTitleASSource = GET_CURRENT_CHROMIUM_PAGE_TITLE_APPLESCRIPT;
+			getPageURLASSource = GET_CURRENT_CHROMIUM_PAGE_URL_APPLESCRIPT;
 		}
 		
 		NSAppleScript *getPageTitleAS = [[NSAppleScript alloc] initWithSource:getPageTitleASSource];
