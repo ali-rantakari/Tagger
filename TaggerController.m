@@ -68,8 +68,6 @@ pane in System Preferences to enable this feature)."
 
 
 
-
-
 // Accessibility API helper function: get value of given attribute
 // from given accessibility object
 id valueOfExistingAttribute(CFStringRef attribute, AXUIElementRef element)
@@ -88,7 +86,6 @@ id valueOfExistingAttribute(CFStringRef attribute, AXUIElementRef element)
 	
 	return result;
 }
-
 
 
 
@@ -1315,7 +1312,14 @@ doCommandBySelector:(SEL)command
 			openFile:(NSString *)aFileName
 {
 	[self addFileToTag:aFileName];
-	return NO;
+	return YES;
+}
+
+- (void) application:(NSApplication *)anApplication
+		   openFiles:(NSArray *)aFileNames
+{
+	for (NSString *filePath in aFileNames)
+		[self addFileToTag:filePath];
 }
 
 
