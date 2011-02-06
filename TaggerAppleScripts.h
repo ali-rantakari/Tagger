@@ -173,7 +173,7 @@
 	tell application \"Mail\"\n\
 		repeat with msg in (selection as list)\n\
 			set theId to id of msg\n\
-			set thisPath to (do shell script \"mdfind -onlyin ~/Library/Mail \\\"kMDItemFSName = '\" & theId & \".emlx'\\\"\")\n\
+			set thisPath to (do shell script \"mdfind -onlyin ~/Library/Mail \\\"kMDItemFSName = '\" & theId & \".*emlx'\\\"\")\n\
 			if thisPath = \"\" then\n\
 				set downloaderror to true\n\
 			else\n\
