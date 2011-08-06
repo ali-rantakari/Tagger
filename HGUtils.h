@@ -15,6 +15,7 @@
 #define kTigerOSVersion			100400
 #define kLeopardOSVersion		100500
 #define kSnowLeopardOSVersion	100600
+#define kLionOSVersion			100700
 NSInteger OSVersion();
 
 NSString *appVersionString();

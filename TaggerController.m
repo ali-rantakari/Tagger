@@ -49,6 +49,7 @@
 #import "HGVersionNumberCompare.h"
 #import "ScriptWindowController.h"
 #import "TaggerAppleScripts.h"
+#import "HGUtils.h"
 
 #import <Sparkle/Sparkle.h>
 #import <Sparkle/HGNoStatusUIUpdateDriverDelegate.h>
@@ -308,7 +309,11 @@ static NSString* frontAppBundleID = nil;
 {
 #ifdef _DEBUG_TARGET
 	[mainWindow setTitle:@"Tagger (DEBUG)"];
-#endif	
+#endif
+	
+	if (OSVersion() >= kLionOSVersion)
+		[okButton setBezelStyle:NSRoundedBezelStyle];
+
 	// if executed from the command line, we don't get focus
 	// by default so let's ask for it (ignoring other apps
 	// since I think we can safely assume, due to the nature
