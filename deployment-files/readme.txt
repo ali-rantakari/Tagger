@@ -1,7 +1,7 @@
 
 Readme for Tagger
 =================
-Copyright (c) 2008-2009 Ali Rantakari
+Copyright (c) 2008-2011 Ali Rantakari
 http://hasseg.org/tagger
 
 

@@ -2,10 +2,10 @@
 <archive type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="7.10">
 	<data>
 		<int key="IBDocument.SystemTarget">1050</int>
-		<string key="IBDocument.SystemVersion">10D573</string>
-		<string key="IBDocument.InterfaceBuilderVersion">762</string>
-		<string key="IBDocument.AppKitVersion">1038.29</string>
-		<string key="IBDocument.HIToolboxVersion">460.00</string>
+		<string key="IBDocument.SystemVersion">10K549</string>
+		<string key="IBDocument.InterfaceBuilderVersion">851</string>
+		<string key="IBDocument.AppKitVersion">1038.36</string>
+		<string key="IBDocument.HIToolboxVersion">461.00</string>
 		<object class="NSMutableDictionary" key="IBDocument.PluginVersions">
 			<bool key="EncodedWithXMLCoder">YES</bool>
 			<object class="NSArray" key="dict.sortedKeys">
@@ -15,18 +15,18 @@
 			</object>
 			<object class="NSMutableArray" key="dict.values">
 				<bool key="EncodedWithXMLCoder">YES</bool>
-				<string>762</string>
+				<string>851</string>
 				<string>1</string>
 			</object>
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="840"/>
-			<integer value="376"/>
 			<integer value="1080"/>
-			<integer value="1118"/>
-			<integer value="745"/>
 			<integer value="516"/>
+			<integer value="840"/>
+			<integer value="745"/>
+			<integer value="1118"/>
+			<integer value="376"/>
 			<integer value="950"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
@@ -35,13 +35,8 @@
 			<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 		</object>
 		<object class="NSMutableDictionary" key="IBDocument.Metadata">
-			<bool key="EncodedWithXMLCoder">YES</bool>
-			<object class="NSArray" key="dict.sortedKeys" id="0">
-				<bool key="EncodedWithXMLCoder">YES</bool>
-			</object>
-			<object class="NSMutableArray" key="dict.values">
-				<bool key="EncodedWithXMLCoder">YES</bool>
-			</object>
+			<string key="NS.key.0">PluginDependencyRecalculationVersion</string>
+			<integer value="1" key="NS.object.0"/>
 		</object>
 		<object class="NSMutableArray" key="IBDocument.RootObjects" id="1048">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -1149,7 +1144,7 @@
 							<object class="NSTextFieldCell" key="NSCell" id="729227488">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">1346371584</int>
-								<string type="base64-UTF8" key="NSContents">Q29weXJpZ2h0IMKpIDIwMDgtMjAxMCBBbGkgUmFudGFrYXJpLgoKVGFnZ2VyIGlzIGxpY2Vuc2VkIHVu
+								<string type="base64-UTF8" key="NSContents">Q29weXJpZ2h0IMKpIDIwMDgtMjAxMSBBbGkgUmFudGFrYXJpLgoKVGFnZ2VyIGlzIGxpY2Vuc2VkIHVu
 ZGVyIHRoZSBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSwgdmVyc2lvbiAyLgoKVGFnZ2VyIGluY2x1
 ZGVzIE9wZW5NZXRhIGNvZGUgYnkgVG9tIEFuZGVyc2VuLCBOU0ltYWdlK1F1aWNrbG9vayBjb2RlIGJ5
 IE1hdHQgR2VtbWVsbCwgTGV0c01vdmUgY29kZSBieSBBbmR5IEtpbSwgSm9obiBCcmF5dG9uLCBDaGFk
@@ -1700,6 +1695,7 @@ ZGQgU2NyaXB0Ii4</string>
 														</object>
 														<string key="NSFrame">{{1, 17}, {493, 342}}</string>
 														<reference key="NSSuperview" ref="497644330"/>
+														<reference key="NSNextKeyView" ref="324621970"/>
 														<reference key="NSDocView" ref="324621970"/>
 														<reference key="NSBGColor" ref="595414322"/>
 														<int key="NScvFlags">4</int>
@@ -1733,6 +1729,7 @@ ZGQgU2NyaXB0Ii4</string>
 														</object>
 														<string key="NSFrame">{{1, 0}, {493, 17}}</string>
 														<reference key="NSSuperview" ref="497644330"/>
+														<reference key="NSNextKeyView" ref="446899565"/>
 														<reference key="NSDocView" ref="446899565"/>
 														<reference key="NSBGColor" ref="595414322"/>
 														<int key="NScvFlags">4</int>
@@ -1741,6 +1738,7 @@ ZGQgU2NyaXB0Ii4</string>
 												</object>
 												<string key="NSFrame">{{17, 54}, {495, 360}}</string>
 												<reference key="NSSuperview" ref="496383548"/>
+												<reference key="NSNextKeyView" ref="193531431"/>
 												<int key="NSsFlags">562</int>
 												<reference key="NSVScroller" ref="85640040"/>
 												<reference key="NSHScroller" ref="234631122"/>
@@ -3095,7 +3093,9 @@ ZGQgU2NyaXB0Ii4</string>
 					<bool key="EncodedWithXMLCoder">YES</bool>
 					<object class="IBObjectRecord">
 						<int key="objectID">0</int>
-						<reference key="object" ref="0"/>
+						<object class="NSArray" key="object" id="0">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+						</object>
 						<reference key="children" ref="1048"/>
 						<nil key="parent"/>
 					</object>
@@ -5284,6 +5284,45 @@ ZGQgU2NyaXB0Ii4</string>
 							<string>id</string>
 						</object>
 					</object>
+					<object class="NSMutableDictionary" key="actionInfosByName">
+						<bool key="EncodedWithXMLCoder">YES</bool>
+						<object class="NSArray" key="dict.sortedKeys">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>addScriptSheetCancel:</string>
+							<string>addScriptSheetSubmit:</string>
+							<string>cancelDownloadSelected:</string>
+							<string>installButtonSelected:</string>
+							<string>reloadRepoButtonSelected:</string>
+							<string>uninstallButtonSelected:</string>
+						</object>
+						<object class="NSMutableArray" key="dict.values">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<object class="IBActionInfo">
+								<string key="name">addScriptSheetCancel:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">addScriptSheetSubmit:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">cancelDownloadSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">installButtonSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">reloadRepoButtonSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">uninstallButtonSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+						</object>
+					</object>
 					<object class="NSMutableDictionary" key="outlets">
 						<bool key="EncodedWithXMLCoder">YES</bool>
 						<object class="NSArray" key="dict.sortedKeys">
@@ -5331,6 +5370,110 @@ ZGQgU2NyaXB0Ii4</string>
 							<string>NSTextField</string>
 						</object>
 					</object>
+					<object class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<bool key="EncodedWithXMLCoder">YES</bool>
+						<object class="NSArray" key="dict.sortedKeys">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>addScriptSheet</string>
+							<string>appIDField</string>
+							<string>downloadInfoField</string>
+							<string>installButton</string>
+							<string>installedScriptsTable</string>
+							<string>mainController</string>
+							<string>mainTabView</string>
+							<string>reloadRepoButton</string>
+							<string>repoScriptsProgressIndicator</string>
+							<string>repoScriptsTable</string>
+							<string>scriptDownloadCancelButton</string>
+							<string>scriptDownloadPanel</string>
+							<string>scriptDownloadProgressIndicator</string>
+							<string>scriptFilenameField</string>
+							<string>scriptInfoField</string>
+							<string>scriptInfoTitleField</string>
+							<string>scriptsWindow</string>
+							<string>uninstallButton</string>
+							<string>youAlreadyHaveThisInfoField</string>
+						</object>
+						<object class="NSMutableArray" key="dict.values">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<object class="IBToOneOutletInfo">
+								<string key="name">addScriptSheet</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">appIDField</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">downloadInfoField</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">installButton</string>
+								<string key="candidateClassName">NSButton</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">installedScriptsTable</string>
+								<string key="candidateClassName">NSTableView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">mainController</string>
+								<string key="candidateClassName">TaggerController</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">mainTabView</string>
+								<string key="candidateClassName">NSTabView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">reloadRepoButton</string>
+								<string key="candidateClassName">NSButton</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">repoScriptsProgressIndicator</string>
+								<string key="candidateClassName">NSProgressIndicator</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">repoScriptsTable</string>
+								<string key="candidateClassName">NSTableView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptDownloadCancelButton</string>
+								<string key="candidateClassName">NSButton</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptDownloadPanel</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptDownloadProgressIndicator</string>
+								<string key="candidateClassName">NSProgressIndicator</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptFilenameField</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptInfoField</string>
+								<string key="candidateClassName">NSTextView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptInfoTitleField</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptsWindow</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">uninstallButton</string>
+								<string key="candidateClassName">NSButton</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">youAlreadyHaveThisInfoField</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+						</object>
+					</object>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">ScriptWindowController.h</string>
@@ -5368,6 +5511,70 @@ ZGQgU2NyaXB0Ii4</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+						</object>
+					</object>
+					<object class="NSMutableDictionary" key="actionInfosByName">
+						<bool key="EncodedWithXMLCoder">YES</bool>
+						<object class="NSArray" key="dict.sortedKeys">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>aboutSelected:</string>
+							<string>checkForUpdates:</string>
+							<string>closeFileListSelected:</string>
+							<string>goToWebsiteSelected:</string>
+							<string>okSelected:</string>
+							<string>preferencesSelected:</string>
+							<string>readAboutFrontAppScriptsSelected:</string>
+							<string>revealScriptsFolderSelected:</string>
+							<string>showFileListSelected:</string>
+							<string>showScriptsWindowSelected:</string>
+							<string>updateApp:</string>
+						</object>
+						<object class="NSMutableArray" key="dict.values">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<object class="IBActionInfo">
+								<string key="name">aboutSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">checkForUpdates:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">closeFileListSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">goToWebsiteSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">okSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">preferencesSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">readAboutFrontAppScriptsSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">revealScriptsFolderSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">showFileListSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">showScriptsWindowSelected:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">updateApp:</string>
+								<string key="candidateClassName">id</string>
+							</object>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="outlets">
@@ -5413,6 +5620,105 @@ ZGQgU2NyaXB0Ii4</string>
 							<string>NSButton</string>
 							<string>NSTextField</string>
 							<string>NSProgressIndicator</string>
+						</object>
+					</object>
+					<object class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<bool key="EncodedWithXMLCoder">YES</bool>
+						<object class="NSArray" key="dict.sortedKeys">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>aboutWindow</string>
+							<string>aboutWindowVersionLabel</string>
+							<string>appIconImageView</string>
+							<string>fileCountLabel</string>
+							<string>fileListSheet</string>
+							<string>fileListTable</string>
+							<string>filenameLabel</string>
+							<string>iconImageView</string>
+							<string>infoLabel</string>
+							<string>mainWindow</string>
+							<string>okButton</string>
+							<string>preferencesWindow</string>
+							<string>progressIndicator</string>
+							<string>scriptsWindow</string>
+							<string>tagsField</string>
+							<string>updateButton</string>
+							<string>updateCheckLabel</string>
+							<string>updateProgressIndicator</string>
+						</object>
+						<object class="NSMutableArray" key="dict.values">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<object class="IBToOneOutletInfo">
+								<string key="name">aboutWindow</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">aboutWindowVersionLabel</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">appIconImageView</string>
+								<string key="candidateClassName">NSImageView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">fileCountLabel</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">fileListSheet</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">fileListTable</string>
+								<string key="candidateClassName">NSTableView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">filenameLabel</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">iconImageView</string>
+								<string key="candidateClassName">NSImageView</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">infoLabel</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">mainWindow</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">okButton</string>
+								<string key="candidateClassName">NSButton</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">preferencesWindow</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">progressIndicator</string>
+								<string key="candidateClassName">NSProgressIndicator</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">scriptsWindow</string>
+								<string key="candidateClassName">NSWindow</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">tagsField</string>
+								<string key="candidateClassName">NSTokenField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">updateButton</string>
+								<string key="candidateClassName">NSButton</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">updateCheckLabel</string>
+								<string key="candidateClassName">NSTextField</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">updateProgressIndicator</string>
+								<string key="candidateClassName">NSProgressIndicator</string>
+							</object>
 						</object>
 					</object>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
