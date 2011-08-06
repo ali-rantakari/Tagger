@@ -82,24 +82,22 @@
 	
 	for (NSString *appID in mainController.scriptsCatalog)
 	{
-		NSMutableDictionary *scriptDict = [NSMutableDictionary dictionaryWithCapacity:4];
-		[scriptDict setObject:appID forKey:@"id"];
+		NSString *fileName = [mainController.scriptsCatalog objectForKey:appID];
 		
 		NSString *appPath = [[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:appID];
-		NSString *appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
-		NSString *fileName = [mainController.scriptsCatalog objectForKey:appID];
+		NSString *appName = @"(app not found)";
+		if (appPath != nil)
+			appName = [[appPath lastPathComponent] stringByDeletingPathExtension];
 		
 		NSString *scriptPath = [mainController.scriptsDirPath stringByAppendingPathComponent:fileName];
 		BOOL scriptExists = [[NSFileManager defaultManager] fileExistsAtPath:scriptPath];
 		if (!scriptExists)
 			continue;
 		
-		if (![self.installedScripts containsObject:appName])
-			[scriptDict setObject:appName forKey:@"application"];
-		else
-			[scriptDict setObject:appID forKey:@"application"];
-		
-		[scriptDict setObject:fileName forKey:@"filename"];
+		NSMutableDictionary *scriptDict = [NSMutableDictionary dictionaryWithCapacity:4];
+		[scriptDict setValue:appID forKey:@"id"];
+		[scriptDict setValue:appName forKey:@"application"];
+		[scriptDict setValue:fileName forKey:@"filename"];
 		
 		NSString *hashString = [[[NSData dataWithContentsOfFile:scriptPath] SHA1Digest] hexStringValue];
 		[scriptDict setObject:hashString forKey:@"hash"];
