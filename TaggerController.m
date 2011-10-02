@@ -421,6 +421,10 @@ static NSString* frontAppBundleID = nil;
 	if ([thisFilePath isEqualToString:selfBundlePath])
 		return;
 	
+	// no duplicates either
+	if ([self.filesToTag containsObject:thisFilePath])
+		return;
+	
 	BOOL thisPathIsDirectory;
 	BOOL thisPathExists = [[NSFileManager defaultManager]
 						   fileExistsAtPath:thisFilePath
