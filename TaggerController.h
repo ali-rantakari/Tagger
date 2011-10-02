@@ -55,6 +55,7 @@
 	BOOL updatesExistCheckInProgress;
 	NSInvocation *installUpdateInvocation;
 	
+	BOOL applicationHasLaunched;
 	BOOL setTagsAndQuitCalled;
 	BOOL cleanupStarted;
 	

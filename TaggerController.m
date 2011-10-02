@@ -1312,6 +1312,125 @@ doCommandBySelector:(SEL)command
 }
 
 
+- (void) updateUI
+{
+	DDLogInfo(@"updateUI. filesToTag = %@", self.filesToTag);
+	
+	static BOOL infoLabelOriginalFrameSet = NO;
+	static NSRect infoLabelOriginalFrame;
+	if (!infoLabelOriginalFrameSet)
+	{
+		infoLabelOriginalFrame = [infoLabel frame];
+		infoLabelOriginalFrameSet = YES;
+	}
+	
+	if ([self.filesToTag count] == 0)
+	{
+		// no files to tag --> reorganize UI for displaying an
+		// info message instead.
+		
+		CGFloat heightOffset = 100;
+		NSRect infoLabelNewFrame = NSMakeRect(infoLabelOriginalFrame.origin.x,
+											  infoLabelOriginalFrame.origin.y-heightOffset,
+											  infoLabelOriginalFrame.size.width,
+											  infoLabelOriginalFrame.size.height+heightOffset
+											  );
+		[infoLabel setFrame:infoLabelNewFrame];
+		[infoLabel setStringValue:NO_FILES_TO_TAG_MSG];
+		[progressIndicator stopAnimation:self];
+		[tagsField setEnabled:NO];
+		[okButton setEnabled:YES];
+		[okButton setTitle:@"Ok"];
+		[okButton setToolTip:@"Quit"];
+		return;
+	}
+	
+	[infoLabel setFrame:infoLabelOriginalFrame];
+	[okButton setTitle:@"Save"];
+	[okButton setToolTip:@"Save tags and quit"];
+	
+	if ([self.filesToTag count] == 1)
+	{
+		[infoLabel setStringValue:@"Editing tags for:"];
+		if (self.customTitle != nil)
+			[filenameLabel setStringValue:self.customTitle];
+		else
+			[filenameLabel setStringValue:[[self.filesToTag objectAtIndex:0] lastPathComponent]];
+		
+		// launch thread for getting and setting icon
+		[NSThread
+		 detachNewThreadSelector:@selector(setFileIconToView:)
+		 toTarget:self
+		 withObject:[self.filesToTag objectAtIndex:0]
+		 ];
+		
+		// get current tag names for specified file,
+		// set tokens into field to represent current tags
+		NSError *err = nil;
+		self.originalTags = [OpenMeta getUserTags:[self.filesToTag objectAtIndex:0] error:&err];
+		
+		if (err != nil)
+		{
+			NSLog(@"error getting originalTags: %@", [err description]);
+			[[NSAlert alertWithError:err] runModal];
+		}
+	}
+	else
+	{
+		[infoLabel setStringValue:[NSString stringWithFormat:@"Editing common tags for %d files:", [self.filesToTag count]]];
+		
+		if (self.customTitle != nil)
+			[filenameLabel setStringValue:self.customTitle];
+		else
+		{
+			// get comma-separated list of all filenames of files to be tagged
+			NSMutableArray *filesToTagFilenames = [NSMutableArray arrayWithCapacity:[self.filesToTag count]];
+			NSString *thisFilePath;
+			for (thisFilePath in self.filesToTag)
+			{
+				[filesToTagFilenames addObject:[thisFilePath lastPathComponent]];
+			}
+			[filenameLabel setStringValue:[filesToTagFilenames componentsJoinedByString:@", "]];
+		}
+		
+		[fileCountLabel setStringValue:[NSString stringWithFormat:@"%d", [self.filesToTag count]]];
+		[fileCountLabel setHidden:NO];
+		
+		[iconImageView setImage:[NSImage imageNamed:@"manyFiles.png"]];
+		if ([kDefaults boolForKey:kDefaultsKey_ShowFrontAppIcon])
+			[appIconImageView setHidden:NO];
+		[progressIndicator stopAnimation:self];
+		
+		// get common tag names for specified files,
+		// set tokens into field to represent current common tags
+		NSError *err = nil;
+		self.originalTags = [OpenMeta getCommonUserTags:self.filesToTag error:&err];
+		
+		if (err != nil)
+		{
+			NSLog(@"error getting originalTags for multiple files: %@", [err description]);
+			[[NSAlert alertWithError:err] runModal];
+		}
+	}
+	
+	if (self.originalTags == nil)
+		self.originalTags = [NSArray array];
+	[tagsField setObjectValue:self.originalTags];
+	DDLogInfo(@"originalTags = %@", self.originalTags);
+	
+	// enable UI controls
+	[okButton setEnabled:YES];
+	[tagsField setEnabled:YES];
+	[tagsField setHidden:NO];
+	
+	[mainWindow makeFirstResponder:tagsField];
+	
+	// set caret (insertion point) to the end of the token field
+	[[tagsField currentEditor]
+	 setSelectedRange:NSMakeRange([[[tagsField currentEditor] string] length], 0)
+	 ];
+}
+
 
 
 // NSApplication delegate method: receive file to open (drag & drop or
@@ -1320,15 +1439,21 @@ doCommandBySelector:(SEL)command
 - (BOOL) application:(NSApplication *)anApplication
 			openFile:(NSString *)aFileName
 {
+	DDLogInfo(@"application:openFile: %@", aFileName);
 	[self addFileToTag:aFileName];
+	if (applicationHasLaunched)
+		[self updateUI];
 	return YES;
 }
 
 - (void) application:(NSApplication *)anApplication
 		   openFiles:(NSArray *)aFileNames
 {
+	DDLogInfo(@"application:openFiles: %@", aFileNames);
 	for (NSString *filePath in aFileNames)
 		[self addFileToTag:filePath];
+	if (applicationHasLaunched)
+		[self updateUI];
 }
 
 
@@ -1403,115 +1528,9 @@ doCommandBySelector:(SEL)command
 									iconForFile:frontAppPath]];
 	}
 	
+	applicationHasLaunched = YES;
 	
-	DDLogInfo(@"filesToTag = %@", self.filesToTag);
-	
-	
-	if ([self.filesToTag count] == 0)
-	{
-		// no files to tag --> reorganize UI for displaying an
-		// info message instead.
-		
-		NSRect infoLabelFrame = [infoLabel frame];
-		CGFloat heightOffset = 100;
-		NSRect infoLabelNewFrame = NSMakeRect(infoLabelFrame.origin.x,
-											  infoLabelFrame.origin.y-heightOffset,
-											  infoLabelFrame.size.width,
-											  infoLabelFrame.size.height+heightOffset
-											  );
-		[infoLabel setFrame:infoLabelNewFrame];
-		[infoLabel setStringValue:NO_FILES_TO_TAG_MSG];
-		[progressIndicator stopAnimation:self];
-		[tagsField setEnabled:NO];
-		[okButton setEnabled:YES];
-		[okButton setTitle:@"Ok"];
-		[okButton setToolTip:@"Quit"];
-	}
-	else
-	{
-		[okButton setTitle:@"Save"];
-		[okButton setToolTip:@"Save tags and quit"];
-		
-		if ([self.filesToTag count] == 1)
-		{
-			[infoLabel setStringValue:@"Editing tags for:"];
-			if (self.customTitle != nil)
-				[filenameLabel setStringValue:self.customTitle];
-			else
-				[filenameLabel setStringValue:[[self.filesToTag objectAtIndex:0] lastPathComponent]];
-			
-			// launch thread for getting and setting icon
-			[NSThread
-				detachNewThreadSelector:@selector(setFileIconToView:)
-				toTarget:self
-				withObject:[self.filesToTag objectAtIndex:0]
-			];
-			
-			// get current tag names for specified file,
-			// set tokens into field to represent current tags
-			NSError *err = nil;
-			self.originalTags = [OpenMeta getUserTags:[self.filesToTag objectAtIndex:0] error:&err];
-			
-			if (err != nil)
-			{
-				NSLog(@"error getting originalTags: %@", [err description]);
-				[[NSAlert alertWithError:err] runModal];
-			}
-		}
-		else
-		{
-			[infoLabel setStringValue:[NSString stringWithFormat:@"Editing common tags for %d files:", [self.filesToTag count]]];
-			
-			if (self.customTitle != nil)
-				[filenameLabel setStringValue:self.customTitle];
-			else
-			{
-				// get comma-separated list of all filenames of files to be tagged
-				NSMutableArray *filesToTagFilenames = [NSMutableArray arrayWithCapacity:[self.filesToTag count]];
-				NSString *thisFilePath;
-				for (thisFilePath in self.filesToTag)
-				{
-					[filesToTagFilenames addObject:[thisFilePath lastPathComponent]];
-				}
-				[filenameLabel setStringValue:[filesToTagFilenames componentsJoinedByString:@", "]];
-			}
-			
-			[fileCountLabel setStringValue:[NSString stringWithFormat:@"%d", [self.filesToTag count]]];
-			[fileCountLabel setHidden:NO];
-			
-			[iconImageView setImage:[NSImage imageNamed:@"manyFiles.png"]];
-			if ([kDefaults boolForKey:kDefaultsKey_ShowFrontAppIcon])
-				[appIconImageView setHidden:NO];
-			[progressIndicator stopAnimation:self];
-			
-			// get common tag names for specified files,
-			// set tokens into field to represent current common tags
-			NSError *err = nil;
-			self.originalTags = [OpenMeta getCommonUserTags:self.filesToTag error:&err];
-			
-			if (err != nil)
-			{
-				NSLog(@"error getting originalTags for multiple files: %@", [err description]);
-				[[NSAlert alertWithError:err] runModal];
-			}
-		}
-		
-		if (self.originalTags == nil)
-			self.originalTags = [NSArray array];
-		[tagsField setObjectValue:self.originalTags];
-		DDLogInfo(@"originalTags = %@", self.originalTags);
-		
-		// enable UI controls
-		[okButton setEnabled:YES];
-		[tagsField setHidden:NO];
-		
-		[mainWindow makeFirstResponder:tagsField];
-		
-		// set caret (insertion point) to the end of the token field
-		[[tagsField currentEditor]
-		 setSelectedRange:NSMakeRange([[[tagsField currentEditor] string] length], 0)
-		];
-	}
+	[self updateUI];
 }
 
 
